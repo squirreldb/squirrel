@@ -1,3 +1,7 @@
+// Copyright (c) 2015, squirreldb. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include <pthread.h>
 #include <unistd.h>
 #include <vector>
@@ -6,13 +10,17 @@
 #include <sofa/pbrpc/pbrpc.h>
 #include "squirrel_rpc.pb.h"
 
+int count = 0;
+
 void PutCallback(sofa::pbrpc::RpcController* cntl,
                  Squirrel::PutRequest* request,
                  Squirrel::PutResponse* response) {
   if (cntl->Failed()) {
     SLOG(ERROR, "rpc failed: %s", cntl->ErrorText().c_str());
+  } else {
+    SLOG(INFO, "resp status: %d", response->status());
+    count += 1;
   }
-  SLOG(INFO, "resp status: %d", response->status());
 
   delete cntl;
   delete request;
@@ -29,6 +37,7 @@ void GetCallback(sofa::pbrpc::RpcController* cntl,
     SLOG(INFO, "value: %s", response->value().c_str());
   } else {
     SLOG(INFO, "key: %s not found", request->key().c_str());
+    count += 1;
   }
 
   delete cntl;
@@ -82,11 +91,17 @@ int main(int argc, char * argv[]) {
   std::string value;
   if (op == "put") {
     value = argv[3];
-    std::cout << op << " : " << key << "-" << value << std::endl;
-    Put(&stub, key, value, false);
+    std::cout << op << " : " << key << "--" << value << std::endl;
+    for (int i = 0; i < 100; ++i) {
+      std::cout << i << std::endl;
+      Put(&stub, key, value, false);
+    }
   } else {
     std::cout << op << " : " << key << std::endl;
     Get(&stub, key);
+  }
+  while (count != 100) {
+    sleep(1);
   }
   
   return EXIT_SUCCESS;
