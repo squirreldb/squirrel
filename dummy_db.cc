@@ -23,19 +23,15 @@ void DummyDB::Put(const std::string key, const std::string value, bool is_delete
         std::cout << tmp_it->first << "-" << tmp_it->second << std::endl;
     }
     //pthread_mutex_unlock(&mutex_);
-    *status = 0;
 }
 
 void DummyDB::Get(const std::string key, std::string* value, int* status) {
-    std::map<std::string, std::string>::iterator it;
     //pthread_mutex_lock(&mutex_);
-    it = db_.find(key);
+    std::map<std::string, std::string>::iterator it = db_.find(key);
     if (it == db_.end()) {
         *status = 1;
     } else {
-        std::cout << "find " << key << " - " << it->second << std::endl;
-        *value = db_[key];
+        *value = it->second;
     }
     //pthread_mutex_unlock(&mutex_);
-    *status = 0;
 }

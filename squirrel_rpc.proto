@@ -2,8 +2,8 @@ package Squirrel;
 option cc_generic_services = true;
 
 message PutRequest {
-    optional string key = 1;
-    optional string value = 2;
+    optional bytes key = 1;
+    optional bytes value = 2;
     optional bool is_delete = 3;
 }
 
@@ -12,11 +12,11 @@ message PutResponse {
 }
 
 message GetRequest {
-    optional string key = 1;
+    optional bytes key = 1;
 }
 
 message GetResponse {
-    optional string value = 1;
+    optional bytes value = 1;
     optional int32 status = 2;
 }
 

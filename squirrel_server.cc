@@ -16,7 +16,7 @@ private:
                    Squirrel::PutResponse* response,
                    google::protobuf::Closure* done) {
     SLOG(INFO, "receive put request: %s", request->key().c_str());
-    int status;
+    int status = 0;
     db_.Put(request->key(), request->value(), request->is_delete(), &status);
     response->set_status(status);
     done->Run();
@@ -28,7 +28,7 @@ private:
                    google::protobuf::Closure* done) {
     SLOG(INFO, "receive get request: %s", request->key().c_str());
     std::string value;
-    int status;
+    int status = 0;
     db_.Get(request->key(), &value, &status);
     response->set_value(value);
     response->set_status(status);
@@ -46,7 +46,7 @@ int main() {
   options.work_thread_num = 4;
   sofa::pbrpc::RpcServer rpc_server(options);
 
-  if (!rpc_server.Start("st01-spi-session0.st01.baidu.com:11220")) {
+  if (!rpc_server.Start("0.0.0.0:11220")) {
       SLOG(ERROR, "start server failed");
       return EXIT_FAILURE;
   }
