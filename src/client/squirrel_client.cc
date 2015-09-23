@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 #include <sofa/pbrpc/pbrpc.h>
-#include "squirrel_rpc.pb.h"
+#include "src/proto/squirrel_rpc.pb.h"
 
 int count = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;

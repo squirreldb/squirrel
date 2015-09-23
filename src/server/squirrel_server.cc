@@ -4,8 +4,8 @@
 
 #include <sofa/pbrpc/pbrpc.h>
 #include <iostream>
-#include "squirrel_rpc.pb.h"
-#include "dummy_db.h"
+#include "src/proto/squirrel_rpc.pb.h"
+#include "src/db/dummy_db.h"
 
 class DummyDBImpl : public Squirrel::SquirrelServer {
 public:
