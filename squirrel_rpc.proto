@@ -6,25 +6,25 @@ package Squirrel;
 option cc_generic_services = true;
 
 message PutRequest {
-    optional bytes key = 1;
-    optional bytes value = 2;
-    optional bool is_delete = 3;
+  optional bytes key = 1;
+  optional bytes value = 2;
+  optional bool is_delete = 3;
 }
 
 message PutResponse {
-    optional int32 status = 1;
+  optional int32 status = 1;
 }
 
 message GetRequest {
-    optional bytes key = 1;
+  optional bytes key = 1;
 }
 
 message GetResponse {
-    optional bytes value = 1;
-    optional int32 status = 2;
+  optional bytes value = 1;
+  optional int32 status = 2;
 }
 
 service SquirrelServer {
-    rpc Put(PutRequest) returns(PutResponse);
-    rpc Get(GetRequest) returns(GetResponse);
+  rpc Put(PutRequest) returns(PutResponse);
+  rpc Get(GetRequest) returns(GetResponse);
 }

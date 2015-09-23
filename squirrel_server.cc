@@ -9,9 +9,7 @@
 
 class DummyDBImpl : public Squirrel::SquirrelServer {
 public:
-  DummyDBImpl() {
-    db_ = DummyDB();
-  }
+  DummyDBImpl() {}
   virtual ~DummyDBImpl() {}
 
 private:
@@ -51,14 +49,14 @@ int main() {
   sofa::pbrpc::RpcServer rpc_server(options);
 
   if (!rpc_server.Start("0.0.0.0:11220")) {
-      SLOG(ERROR, "start server failed");
-      return EXIT_FAILURE;
+    SLOG(ERROR, "start server failed");
+    return EXIT_FAILURE;
   }
 
   Squirrel::SquirrelServer* dummy_db_service = new DummyDBImpl();
   if (!rpc_server.RegisterService(dummy_db_service)) {
-      SLOG(ERROR, "register service failed");
-      return EXIT_FAILURE;
+    SLOG(ERROR, "register service failed");
+    return EXIT_FAILURE;
   }
 
   rpc_server.Run();

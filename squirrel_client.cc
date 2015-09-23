@@ -4,6 +4,7 @@
 
 #include <pthread.h>
 #include <unistd.h>
+#include <time.h>
 #include <vector>
 #include <iostream>
 #include <string>
@@ -11,6 +12,8 @@
 #include "squirrel_rpc.pb.h"
 
 int count = 0;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 void PutCallback(sofa::pbrpc::RpcController* cntl,
                  Squirrel::PutRequest* request,
@@ -18,13 +21,13 @@ void PutCallback(sofa::pbrpc::RpcController* cntl,
   if (cntl->Failed()) {
     SLOG(ERROR, "rpc failed: %s", cntl->ErrorText().c_str());
   } else {
-    SLOG(INFO, "resp status: %d", response->status());
     count += 1;
   }
 
   delete cntl;
   delete request;
   delete response;
+  pthread_cond_signal(&cond);
 }
 
 void GetCallback(sofa::pbrpc::RpcController* cntl,
@@ -36,13 +39,13 @@ void GetCallback(sofa::pbrpc::RpcController* cntl,
   if (response->status() == 0) {
     SLOG(INFO, "value: %s", response->value().c_str());
   } else {
-    SLOG(INFO, "key: %s not found", request->key().c_str());
     count += 1;
   }
 
   delete cntl;
   delete request;
   delete response;
+  pthread_cond_signal(&cond);
 }
 
 void Put(Squirrel::SquirrelServer_Stub* stub, std::string key, std::string value, bool is_delete) {
@@ -55,8 +58,11 @@ void Put(Squirrel::SquirrelServer_Stub* stub, std::string key, std::string value
   sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
   cntl->SetTimeout(3000);
   google::protobuf::Closure* done = sofa::pbrpc::NewClosure(&PutCallback, cntl, request, response);
+
+  pthread_mutex_lock(&mutex);
   stub->Put(cntl, request, response, done);
-  sleep(1);
+  pthread_cond_wait(&cond, &mutex);
+  pthread_mutex_unlock(&mutex);
 }
 
 void Get(Squirrel::SquirrelServer_Stub* stub, std::string key) {
@@ -67,8 +73,11 @@ void Get(Squirrel::SquirrelServer_Stub* stub, std::string key) {
   sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
   cntl->SetTimeout(3000);
   google::protobuf::Closure* done = sofa::pbrpc::NewClosure(&GetCallback, cntl, request, response);
+
+  pthread_mutex_lock(&mutex);
   stub->Get(cntl, request, response, done);
-  sleep(1);
+  pthread_cond_wait(&cond, &mutex);
+  pthread_mutex_unlock(&mutex);
 }
 
 int main(int argc, char * argv[]) {
@@ -89,20 +98,17 @@ int main(int argc, char * argv[]) {
   std::string op = argv[1];
   std::string key = argv[2];
   std::string value;
+
+  struct timeval tv_start;
+  gettimeofday(&tv_start, NULL);
+
   if (op == "put") {
     value = argv[3];
-    std::cout << op << " : " << key << "--" << value << std::endl;
-    for (int i = 0; i < 100; ++i) {
-      std::cout << i << std::endl;
-      Put(&stub, key, value, false);
-    }
+    std::cout << op << " : " << key << "-" << value << std::endl;
+    Put(&stub, key, value, false);
   } else {
     std::cout << op << " : " << key << std::endl;
     Get(&stub, key);
   }
-  while (count != 100) {
-    sleep(1);
-  }
-  
   return EXIT_SUCCESS;
 }
