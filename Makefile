@@ -4,8 +4,8 @@
 
 include depends.mk
 
-#OPT ?= -O2        # (A) Production use (optimized mode)
-OPT ?= -g2      # (B) Debug mode, w/ full line-level debugging symbols
+OPT ?= -O2        # (A) Production use (optimized mode)
+# OPT ?= -g2      # (B) Debug mode, w/ full line-level debugging symbols
 # OPT ?= -O2 -g2  # (C) Profiling mode: opt, but w/debugging symbols
 
 CXX=g++

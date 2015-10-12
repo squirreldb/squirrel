@@ -17,7 +17,7 @@ private:
                    const Squirrel::PutRequest* request,
                    Squirrel::PutResponse* response,
                    google::protobuf::Closure* done) {
-    SLOG(INFO, "receive put request: %s", request->key().c_str());
+    // SLOG(INFO, "receive put request: %s", request->key().c_str());
     int status = 0;
     db_.Put(request->key(), request->value(), request->is_delete(), &status);
     response->set_status(status);
@@ -48,7 +48,7 @@ int main() {
   options.work_thread_num = 4;
   sofa::pbrpc::RpcServer rpc_server(options);
 
-  if (!rpc_server.Start("0.0.0.0:11220")) {
+  if (!rpc_server.Start("0.0.0.0:11221")) {
     SLOG(ERROR, "start server failed");
     return EXIT_FAILURE;
   }
