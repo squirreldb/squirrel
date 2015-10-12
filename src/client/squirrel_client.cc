@@ -22,17 +22,18 @@ void PutCallback(sofa::pbrpc::RpcController* cntl,
                  Squirrel::PutResponse* response) {
   if (cntl->Failed()) {
     SLOG(ERROR, "rpc failed: %s", cntl->ErrorText().c_str());
+    pthread_mutex_lock(&mutex);
     failed += 1;
+    pthread_mutex_unlock(&mutex);
   } else {
+    pthread_mutex_lock(&mutex);
     count += 1;
+    pthread_mutex_unlock(&mutex);
   }
 
   delete cntl;
   delete request;
   delete response;
-  pthread_mutex_lock(&mutex);
-  pthread_cond_signal(&cond);
-  pthread_mutex_unlock(&mutex);
 }
 
 void GetCallback(sofa::pbrpc::RpcController* cntl,
@@ -44,15 +45,14 @@ void GetCallback(sofa::pbrpc::RpcController* cntl,
   if (response->status() == 0) {
     SLOG(INFO, "value: %s", response->value().c_str());
   } else {
+    pthread_mutex_lock(&mutex);
     count += 1;
+    pthread_mutex_unlock(&mutex);
   }
 
   delete cntl;
   delete request;
   delete response;
-  pthread_mutex_lock(&mutex);
-  pthread_cond_signal(&cond);
-  pthread_mutex_unlock(&mutex);
 }
 
 void Put(Squirrel::SquirrelServer_Stub* stub, std::string key, std::string value, bool is_delete) {
@@ -66,10 +66,7 @@ void Put(Squirrel::SquirrelServer_Stub* stub, std::string key, std::string value
   cntl->SetTimeout(3000);
   google::protobuf::Closure* done = sofa::pbrpc::NewClosure(&PutCallback, cntl, request, response);
 
-  pthread_mutex_lock(&mutex);
   stub->Put(cntl, request, response, done);
-  pthread_cond_wait(&cond, &mutex);
-  pthread_mutex_unlock(&mutex);
 }
 
 void Get(Squirrel::SquirrelServer_Stub* stub, std::string key) {
@@ -81,10 +78,7 @@ void Get(Squirrel::SquirrelServer_Stub* stub, std::string key) {
   cntl->SetTimeout(3000);
   google::protobuf::Closure* done = sofa::pbrpc::NewClosure(&GetCallback, cntl, request, response);
 
-  pthread_mutex_lock(&mutex);
   stub->Get(cntl, request, response, done);
-  pthread_cond_wait(&cond, &mutex);
-  pthread_mutex_unlock(&mutex);
 }
 
 int main(int argc, char * argv[]) {
