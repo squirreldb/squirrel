@@ -14,14 +14,22 @@
 int count = 0;
 int failed = 0;
 int NUM = 1000000;
+int thread_num = 4;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+// static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+struct PutArgs {
+  Squirrel::SquirrelServer_Stub* stub;
+  std::string key;
+  std::string value;
+  bool is_delete;
+};
 
 void PutCallback(sofa::pbrpc::RpcController* cntl,
                  Squirrel::PutRequest* request,
                  Squirrel::PutResponse* response) {
   if (cntl->Failed()) {
-    SLOG(ERROR, "rpc failed: %s", cntl->ErrorText().c_str());
+    //SLOG(ERROR, "rpc failed: %s", cntl->ErrorText().c_str());
     pthread_mutex_lock(&mutex);
     failed += 1;
     pthread_mutex_unlock(&mutex);
@@ -55,18 +63,21 @@ void GetCallback(sofa::pbrpc::RpcController* cntl,
   delete response;
 }
 
-void Put(Squirrel::SquirrelServer_Stub* stub, std::string key, std::string value, bool is_delete) {
-  Squirrel::PutRequest* request = new Squirrel::PutRequest();
-  request->set_key(key);
-  request->set_value(value);
-  request->set_is_delete(is_delete);
+void* Put(void* args) {
+  PutArgs* put_args = static_cast<PutArgs*>(args);
+  for (int i = 0; i < NUM / thread_num; ++i) {
+    Squirrel::PutRequest* request = new Squirrel::PutRequest();
+    request->set_key(put_args->key);
+    request->set_value(put_args->value);
+    request->set_is_delete(put_args->is_delete);
 
-  Squirrel::PutResponse* response = new Squirrel::PutResponse();
-  sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
-  cntl->SetTimeout(3000);
-  google::protobuf::Closure* done = sofa::pbrpc::NewClosure(&PutCallback, cntl, request, response);
+    Squirrel::PutResponse* response = new Squirrel::PutResponse();
+    sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
+    cntl->SetTimeout(3000);
+    google::protobuf::Closure* done = sofa::pbrpc::NewClosure(&PutCallback, cntl, request, response);
 
-  stub->Put(cntl, request, response, done);
+    put_args->stub->Put(cntl, request, response, done);
+  }
 }
 
 void Get(Squirrel::SquirrelServer_Stub* stub, std::string key) {
@@ -107,19 +118,35 @@ int main(int argc, char * argv[]) {
   struct timeval tv_start;
   gettimeofday(&tv_start, NULL);
 
+  std::vector<pthread_t> threads;
+  pthread_mutex_init(&mutex, NULL);
   if (op == "put") {
     value = argv[3];
     std::cout << op << " : " << key << "--" << value << std::endl;
-    for (int i = 0; i < NUM; ++i) {
-      if (i % 50000 == 0) {
-        std::cout << i << std::endl;
+    for (int i = 0; i < thread_num; ++i) {
+      pthread_t ntid;
+      PutArgs args;
+      args.stub = &stub;
+      args.key = key;
+      args.value = value;
+      args.is_delete = false;
+      int err = pthread_create(&ntid, NULL, Put, static_cast<void*>(&args));
+      if (err != 0) {
+        // SLOG(ERROR, "create thread failed: %s", strerror(err));
+      } else {
+        std::cout << "started thread #" << i << std::endl;
+        threads.push_back(ntid);
       }
-      Put(&stub, key, value, false);
     }
   } else {
     std::cout << op << " : " << key << std::endl;
     Get(&stub, key);
   }
+
+  for (int i = 0; i < thread_num; ++i) {
+    pthread_join(threads[i], NULL);
+  }
+  std::cout << "joined" << std::endl;
   while (op == "put" && (count + failed) != NUM) {
     sleep(1);
   }
@@ -129,8 +156,8 @@ int main(int argc, char * argv[]) {
   long start = tv_start.tv_sec * 1000000 + tv_start.tv_usec;
   long end = tv_end.tv_sec * 1000000 + tv_end.tv_usec;
   double interval = (end - start) / double(NUM);
-  std::cout << "count = " << count << std::endl;
-  std::cout << (count * 1.0) / interval << "entries" << std::endl;
+  std::cout << "count = " << count << " failed = " << failed <<std::endl;
+  std::cout << double(count) / interval << "entries" << std::endl;
 
   return EXIT_SUCCESS;
 }
