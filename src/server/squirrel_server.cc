@@ -9,7 +9,7 @@
 
 class DummyDBImpl : public Squirrel::SquirrelServer {
 public:
-  DummyDBImpl() {}
+  DummyDBImpl() : count(0) {}
   virtual ~DummyDBImpl() {}
 
 private:
@@ -17,7 +17,10 @@ private:
                    const Squirrel::PutRequest* request,
                    Squirrel::PutResponse* response,
                    google::protobuf::Closure* done) {
-    // SLOG(INFO, "receive put request: %s", request->key().c_str());
+    if (count % 1000000 == 0) {
+      SLOG(INFO, "receive put request: %s", request->key().c_str());
+    }
+    ++count;
     int status = 0;
     db_.Put(request->key(), request->value(), request->is_delete(), &status);
     response->set_status(status);
@@ -39,6 +42,7 @@ private:
 
 private:
   DummyDB db_;
+  int count;
 };
 
 int main() {

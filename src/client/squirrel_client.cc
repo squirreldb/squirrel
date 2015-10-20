@@ -13,7 +13,6 @@
 
 int count = 0;
 int failed = 0;
-int NUM = 1000000;
 int thread_num = 4;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 // static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
@@ -65,7 +64,7 @@ void GetCallback(sofa::pbrpc::RpcController* cntl,
 
 void* Put(void* args) {
   PutArgs* put_args = static_cast<PutArgs*>(args);
-  for (int i = 0; i < NUM / thread_num; ++i) {
+  for (int i = 0; ; ++i) {
     Squirrel::PutRequest* request = new Squirrel::PutRequest();
     request->set_key(put_args->key);
     request->set_value(put_args->value);
@@ -108,7 +107,7 @@ int main(int argc, char * argv[]) {
 
   sofa::pbrpc::RpcClient rpc_client(options);
 
-  sofa::pbrpc::RpcChannel rpc_channel(&rpc_client, "st01-spi-session0.st01.baidu.com:11221");
+  sofa::pbrpc::RpcChannel rpc_channel(&rpc_client, "st01-spi-session1.st01.baidu.com:11221");
   Squirrel::SquirrelServer_Stub stub(&rpc_channel);
 
   std::string op = argv[1];
@@ -143,21 +142,18 @@ int main(int argc, char * argv[]) {
     Get(&stub, key);
   }
 
+  while (true) {
+    pthread_mutex_lock(&mutex);
+    std::cout << "Qps=" << count << " failed=" << failed << std::endl;
+    count = 0;
+    failed = 0;
+    pthread_mutex_unlock(&mutex);
+    sleep(1);
+  }
   for (int i = 0; i < thread_num; ++i) {
     pthread_join(threads[i], NULL);
   }
   std::cout << "joined" << std::endl;
-  while (op == "put" && (count + failed) != NUM) {
-    sleep(1);
-  }
-  
-  struct timeval tv_end;
-  gettimeofday(&tv_end, NULL);
-  long start = tv_start.tv_sec * 1000000 + tv_start.tv_usec;
-  long end = tv_end.tv_sec * 1000000 + tv_end.tv_usec;
-  double interval = (end - start) / double(NUM);
-  std::cout << "count = " << count << " failed = " << failed <<std::endl;
-  std::cout << double(count) / interval << "entries" << std::endl;
 
   return EXIT_SUCCESS;
 }
