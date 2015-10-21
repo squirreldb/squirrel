@@ -14,6 +14,7 @@
 int count = 0;
 int failed = 0;
 int thread_num = 4;
+int pending = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 // static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
@@ -35,6 +36,7 @@ void PutCallback(sofa::pbrpc::RpcController* cntl,
   } else {
     pthread_mutex_lock(&mutex);
     count += 1;
+    pending -= 1;
     pthread_mutex_unlock(&mutex);
   }
 
@@ -64,7 +66,12 @@ void GetCallback(sofa::pbrpc::RpcController* cntl,
 
 void* Put(void* args) {
   PutArgs* put_args = static_cast<PutArgs*>(args);
-  for (int i = 0; ; ++i) {
+  while (true) {
+    pthread_mutex_lock(&mutex);
+    if (pending > 1000) {
+      usleep(1);
+    }
+    pthread_mutex_unlock(&mutex);
     Squirrel::PutRequest* request = new Squirrel::PutRequest();
     request->set_key(put_args->key);
     request->set_value(put_args->value);
@@ -76,6 +83,7 @@ void* Put(void* args) {
     google::protobuf::Closure* done = sofa::pbrpc::NewClosure(&PutCallback, cntl, request, response);
 
     put_args->stub->Put(cntl, request, response, done);
+    pending += 1;
   }
 }
 
@@ -114,7 +122,7 @@ int main(int argc, char * argv[]) {
   std::string key = argv[2];
   std::string value;
 
-  struct timeval tv_start;
+  struct timeval tv_start, tv_end;
   gettimeofday(&tv_start, NULL);
 
   std::vector<pthread_t> threads;
@@ -143,11 +151,22 @@ int main(int argc, char * argv[]) {
   }
 
   while (true) {
+    gettimeofday(&tv_end, NULL);
+    long start = tv_start.tv_sec * 1000000 + tv_start.tv_usec;
+    long end = tv_end.tv_sec * 1000000 + tv_end.tv_usec;
+    double interval = (end - start) / double(1000000);
+    std::cout << "interval = " << interval << std::endl;
+
     pthread_mutex_lock(&mutex);
-    std::cout << "Qps=" << count << " failed=" << failed << std::endl;
+    std::cout << "Qps=" << double(count) / interval
+              << "\tfailed=" << double(failed) / interval
+              << "\tpending=" << double(pending) / interval
+              << "\tinterval=" << interval << std::endl;
     count = 0;
     failed = 0;
     pthread_mutex_unlock(&mutex);
+
+    tv_start = tv_end;
     sleep(1);
   }
   for (int i = 0; i < thread_num; ++i) {
