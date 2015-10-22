@@ -13,34 +13,43 @@
 
 #include "src/proto/squirrel_rpc.pb.h"
 #include "src/common/thread_pool.h"
+#include "src/client/squirrel_client.h"
 
-int count = 0;
-int failed = 0;
-int thread_num = 4;
-int pending = 0;
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-// static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+SquirrelClient::SquirrelClient() :
+    count_(0), failed_(0), thread_num_(4), pending_(0),
+    thread_pool_(new ThreadPool(thread_num_)) {
+  pthread_mutex_init(&mutex_, NULL);
+  init();
+}
 
-struct PutArgs {
-  Squirrel::SquirrelServer_Stub* stub;
-  std::string key;
-  std::string value;
-  bool is_delete;
-};
+SquirrelClient::~SquirrelClient() {}
 
-void PutCallback(sofa::pbrpc::RpcController* cntl,
-                 Squirrel::PutRequest* request,
-                 Squirrel::PutResponse* response) {
+void SquirrelClient::init() {
+  SOFA_PBRPC_SET_LOG_LEVEL(INFO);
+
+  sofa::pbrpc::RpcClientOptions options;
+  options.work_thread_num = 8;
+  options.callback_thread_num = 8;
+  options.max_pending_buffer_size = 4;
+
+  rpc_client_ = new sofa::pbrpc::RpcClient(options);
+  rpc_channel_ = new sofa::pbrpc::RpcChannel(rpc_client_, "st01-spi-session1.st01.baidu.com:11221");
+  stub_ = new Squirrel::SquirrelServer_Stub(rpc_channel_);
+}
+
+void SquirrelClient::PutCallback(sofa::pbrpc::RpcController* cntl,
+                                 Squirrel::PutRequest* request,
+                                 Squirrel::PutResponse* response) {
   if (cntl->Failed()) {
     //SLOG(ERROR, "rpc failed: %s", cntl->ErrorText().c_str());
-    pthread_mutex_lock(&mutex);
-    failed += 1;
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_lock(&mutex_);
+    failed_ += 1;
+    pthread_mutex_unlock(&mutex_);
   } else {
-    pthread_mutex_lock(&mutex);
-    count += 1;
-    pending -= 1;
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_lock(&mutex_);
+    count_ += 1;
+    pending_ -= 1;
+    pthread_mutex_unlock(&mutex_);
   }
 
   delete cntl;
@@ -48,18 +57,18 @@ void PutCallback(sofa::pbrpc::RpcController* cntl,
   delete response;
 }
 
-void GetCallback(sofa::pbrpc::RpcController* cntl,
-                 Squirrel::GetRequest* request,
-                 Squirrel::GetResponse* response) {
+void SquirrelClient::GetCallback(sofa::pbrpc::RpcController* cntl,
+                                 Squirrel::GetRequest* request,
+                                 Squirrel::GetResponse* response) {
   if (cntl->Failed()) {
     SLOG(ERROR, "rpc failed: %s", cntl->ErrorText().c_str());
   }
   if (response->status() == 0) {
     SLOG(INFO, "value: %s", response->value().c_str());
   } else {
-    pthread_mutex_lock(&mutex);
-    count += 1;
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_lock(&mutex_);
+    count_ += 1;
+    pthread_mutex_unlock(&mutex_);
   }
 
   delete cntl;
@@ -67,13 +76,21 @@ void GetCallback(sofa::pbrpc::RpcController* cntl,
   delete response;
 }
 
-void Put(Squirrel::SquirrelServer_Stub* stub, std::string key, std::string value, bool is_delete) {
+void SquirrelClient::Put(const std::string& key, const std::string& value, const bool is_delete) {
+  for (int i = 0; i < thread_num_; ++i) {
+    ThreadPool::Task task =
+        boost::bind(&SquirrelClient::DoPut, this, key, value, is_delete);
+    thread_pool_->AddTask(task);
+  }
+}
+
+void SquirrelClient::DoPut(const std::string& key, const std::string& value, const bool is_delete) {
   while (true) {
-    pthread_mutex_lock(&mutex);
-    if (pending > 1000) {
+    pthread_mutex_lock(&mutex_);
+    if (pending_ > 1000) {
       usleep(1);
     }
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutex_);
     Squirrel::PutRequest* request = new Squirrel::PutRequest();
     request->set_key(key);
     request->set_value(value);
@@ -82,76 +99,63 @@ void Put(Squirrel::SquirrelServer_Stub* stub, std::string key, std::string value
     Squirrel::PutResponse* response = new Squirrel::PutResponse();
     sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
     cntl->SetTimeout(3000);
-    google::protobuf::Closure* done = sofa::pbrpc::NewClosure(&PutCallback, cntl, request, response);
+    google::protobuf::Closure* done =
+      sofa::pbrpc::NewClosure(this, &SquirrelClient::PutCallback, cntl, request, response);
 
-    stub->Put(cntl, request, response, done);
-    pending += 1;
+    stub_->Put(cntl, request, response, done);
+    pending_ += 1;
   }
 }
 
-void Get(Squirrel::SquirrelServer_Stub* stub, std::string key) {
+void SquirrelClient::Get(std::string key) {
   Squirrel::GetRequest* request = new Squirrel::GetRequest();
   request->set_key(key);
 
   Squirrel::GetResponse* response = new Squirrel::GetResponse();
   sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
   cntl->SetTimeout(3000);
-  google::protobuf::Closure* done = sofa::pbrpc::NewClosure(&GetCallback, cntl, request, response);
+  google::protobuf::Closure* done =
+    sofa::pbrpc::NewClosure(this, &SquirrelClient::GetCallback, cntl, request, response);
 
-  stub->Get(cntl, request, response, done);
+  stub_->Get(cntl, request, response, done);
+}
+
+void SquirrelClient::GetStat(int* count, int* failed, int* pending) {
+  pthread_mutex_lock(&mutex_);
+  *count = count_;
+  *failed = failed_;
+  *pending = pending_;
+  pthread_mutex_unlock(&mutex_);
+}
+
+void SquirrelClient::ResetStat() {
+  pthread_mutex_lock(&mutex_);
+  count_ = 0;
+  failed_ = 0;
+  pending_ = 0;
+  pthread_mutex_unlock(&mutex_);
 }
 
 int main(int argc, char * argv[]) {
-  if (argc < 3) {
-    std::cout << "Invalid argument number: " << argc << std::endl;
-    return 1;
-  }
-
-  // rpc init
-  SOFA_PBRPC_SET_LOG_LEVEL(INFO);
-
-  sofa::pbrpc::RpcClientOptions options;
-  options.work_thread_num = 8;
-  options.callback_thread_num = 8;
-  options.max_pending_buffer_size = 4;
-
-  sofa::pbrpc::RpcClient rpc_client(options);
-
-  sofa::pbrpc::RpcChannel rpc_channel(&rpc_client, "st01-spi-session1.st01.baidu.com:11221");
-  Squirrel::SquirrelServer_Stub stub(&rpc_channel);
-
-  std::string op = argv[1];
-  std::string key = argv[2];
-  std::string value;
-
   struct timeval tv_start, tv_end;
   gettimeofday(&tv_start, NULL);
 
-  std::vector<pthread_t> threads;
-  pthread_mutex_init(&mutex, NULL);
-
-  ThreadPool* thread_pool = new ThreadPool(8);
-  for (int i = 0; i < 8; ++i) {
-    ThreadPool::Task task =
-        boost::bind(&Put, &stub, key, value, false);
-    thread_pool->AddTask(task);
-  }
+  SquirrelClient client;
+  client.Put("k", "v", false);
 
   while (true) {
     gettimeofday(&tv_end, NULL);
     long start = tv_start.tv_sec * 1000000 + tv_start.tv_usec;
     long end = tv_end.tv_sec * 1000000 + tv_end.tv_usec;
     double interval = (end - start) / double(1000000);
-    std::cout << "interval = " << interval << std::endl;
 
-    pthread_mutex_lock(&mutex);
+    int count, failed, pending;
+    client.GetStat(&count, &failed, &pending);
     std::cout << "Qps=" << int((count) / interval)
               << "\tfailed=" << int(double(failed) / interval)
               << "\tpending=" << int(double(pending) / interval)
               << "\tinterval=" << interval << std::endl;
-    count = 0;
-    failed = 0;
-    pthread_mutex_unlock(&mutex);
+    client.ResetStat();
 
     tv_start = tv_end;
     sleep(1);
