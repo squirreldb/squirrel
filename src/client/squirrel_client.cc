@@ -9,7 +9,10 @@
 #include <iostream>
 #include <string>
 #include <sofa/pbrpc/pbrpc.h>
+#include <boost/bind.hpp>
+
 #include "src/proto/squirrel_rpc.pb.h"
+#include "src/common/thread_pool.h"
 
 int count = 0;
 int failed = 0;
@@ -64,8 +67,7 @@ void GetCallback(sofa::pbrpc::RpcController* cntl,
   delete response;
 }
 
-void* Put(void* args) {
-  PutArgs* put_args = static_cast<PutArgs*>(args);
+void Put(Squirrel::SquirrelServer_Stub* stub, std::string key, std::string value, bool is_delete) {
   while (true) {
     pthread_mutex_lock(&mutex);
     if (pending > 1000) {
@@ -73,16 +75,16 @@ void* Put(void* args) {
     }
     pthread_mutex_unlock(&mutex);
     Squirrel::PutRequest* request = new Squirrel::PutRequest();
-    request->set_key(put_args->key);
-    request->set_value(put_args->value);
-    request->set_is_delete(put_args->is_delete);
+    request->set_key(key);
+    request->set_value(value);
+    request->set_is_delete(is_delete);
 
     Squirrel::PutResponse* response = new Squirrel::PutResponse();
     sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
     cntl->SetTimeout(3000);
     google::protobuf::Closure* done = sofa::pbrpc::NewClosure(&PutCallback, cntl, request, response);
 
-    put_args->stub->Put(cntl, request, response, done);
+    stub->Put(cntl, request, response, done);
     pending += 1;
   }
 }
@@ -127,27 +129,12 @@ int main(int argc, char * argv[]) {
 
   std::vector<pthread_t> threads;
   pthread_mutex_init(&mutex, NULL);
-  if (op == "put") {
-    value = argv[3];
-    std::cout << op << " : " << key << "--" << value << std::endl;
-    for (int i = 0; i < thread_num; ++i) {
-      pthread_t ntid;
-      PutArgs args;
-      args.stub = &stub;
-      args.key = key;
-      args.value = value;
-      args.is_delete = false;
-      int err = pthread_create(&ntid, NULL, Put, static_cast<void*>(&args));
-      if (err != 0) {
-        // SLOG(ERROR, "create thread failed: %s", strerror(err));
-      } else {
-        std::cout << "started thread #" << i << std::endl;
-        threads.push_back(ntid);
-      }
-    }
-  } else {
-    std::cout << op << " : " << key << std::endl;
-    Get(&stub, key);
+
+  ThreadPool* thread_pool = new ThreadPool(8);
+  for (int i = 0; i < 8; ++i) {
+    ThreadPool::Task task =
+        boost::bind(&Put, &stub, key, value, false);
+    thread_pool->AddTask(task);
   }
 
   while (true) {
@@ -158,9 +145,9 @@ int main(int argc, char * argv[]) {
     std::cout << "interval = " << interval << std::endl;
 
     pthread_mutex_lock(&mutex);
-    std::cout << "Qps=" << double(count) / interval
-              << "\tfailed=" << double(failed) / interval
-              << "\tpending=" << double(pending) / interval
+    std::cout << "Qps=" << int((count) / interval)
+              << "\tfailed=" << int(double(failed) / interval)
+              << "\tpending=" << int(double(pending) / interval)
               << "\tinterval=" << interval << std::endl;
     count = 0;
     failed = 0;
@@ -169,10 +156,6 @@ int main(int argc, char * argv[]) {
     tv_start = tv_end;
     sleep(1);
   }
-  for (int i = 0; i < thread_num; ++i) {
-    pthread_join(threads[i], NULL);
-  }
-  std::cout << "joined" << std::endl;
 
   return EXIT_SUCCESS;
 }

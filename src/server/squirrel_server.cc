@@ -17,7 +17,7 @@ private:
                    const Squirrel::PutRequest* request,
                    Squirrel::PutResponse* response,
                    google::protobuf::Closure* done) {
-    if (count % 1000000 == 0) {
+    if (count % 1000000 == 0) { // not for counting, but for heartbeat detect
       SLOG(INFO, "receive put request: %s", request->key().c_str());
     }
     ++count;
