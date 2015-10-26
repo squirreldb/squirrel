@@ -10,10 +10,11 @@ OPT ?= -g2      # (B) Debug mode, w/ full line-level debugging symbols
 
 CXX=g++
 INCPATH=-I. -I$(SOFA_PBRPC)/include -I$(BOOST_HEADER_DIR) -I$(PROTOBUF_DIR)/include \
-		-I$(SNAPPY_DIR)/include -I$(ZLIB_DIR)/include
+		-I$(SNAPPY_DIR)/include -I$(ZLIB_DIR)/include -I$(COMMON_INC)
 CXXFLAGS += $(OPT) -pipe -W -Wall -fPIC -D_GNU_SOURCE -D__STDC_LIMIT_MACROS $(INCPATH)
 
-LIBRARY=$(SOFA_PBRPC)/lib/libsofa-pbrpc.a $(PROTOBUF_DIR)/lib/libprotobuf.a $(SNAPPY_DIR)/lib/libsnappy.a
+LIBRARY=$(SOFA_PBRPC)/lib/libsofa-pbrpc.a $(PROTOBUF_DIR)/lib/libprotobuf.a \
+		$(SNAPPY_DIR)/lib/libsnappy.a $(COMMON_LIB)/libcommon.a
 LDFLAGS += -L$(ZLIB_DIR)/lib -lpthread -lrt -lz -lpthread
 
 PROTO_FILE := $(wildcard src/proto/*.proto)

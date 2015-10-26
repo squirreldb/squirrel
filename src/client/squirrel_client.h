@@ -5,6 +5,8 @@
 #ifndef CLIENT_SQUIRREL_CLIENT_H
 #define CLIENT_SQUIRREL_CLIENT_H
 
+#include <thread_pool.h>
+
 class SquirrelClient
 {
 public:
@@ -29,7 +31,7 @@ private:
   int thread_num_;
   int pending_;
   pthread_mutex_t mutex_;
-  ThreadPool* thread_pool_;
+  baidu::common::ThreadPool* thread_pool_;
 
   sofa::pbrpc::RpcClient* rpc_client_;
   sofa::pbrpc::RpcChannel* rpc_channel_;

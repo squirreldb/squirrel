@@ -12,12 +12,11 @@
 #include <boost/bind.hpp>
 
 #include "src/proto/squirrel_rpc.pb.h"
-#include "src/common/thread_pool.h"
 #include "src/client/squirrel_client.h"
 
 SquirrelClient::SquirrelClient() :
     count_(0), failed_(0), thread_num_(4), pending_(0),
-    thread_pool_(new ThreadPool(thread_num_)) {
+    thread_pool_(new baidu::common::ThreadPool(thread_num_)) {
   pthread_mutex_init(&mutex_, NULL);
   init();
 }
@@ -78,7 +77,7 @@ void SquirrelClient::GetCallback(sofa::pbrpc::RpcController* cntl,
 
 void SquirrelClient::Put(const std::string& key, const std::string& value, const bool is_delete) {
   for (int i = 0; i < thread_num_; ++i) {
-    ThreadPool::Task task =
+    baidu::common::ThreadPool::Task task =
         boost::bind(&SquirrelClient::DoPut, this, key, value, is_delete);
     thread_pool_->AddTask(task);
   }

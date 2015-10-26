@@ -1,7 +1,9 @@
 
-BOOST_HEADER_DIR=../tera/thirdparty/boost_1_57_0
-PROTOBUF_DIR=../tera/thirdparty
-SNAPPY_DIR=../tera/thirdparty
-SOFA_PBRPC=../sofa-pbrpc/output
+BOOST_HEADER_DIR=./thirdparty/boost_1_57_0
+PROTOBUF_DIR=./thirdparty
+SNAPPY_DIR=./thirdparty
+SOFA_PBRPC=./thirdparty
+COMMON_INC=./thirdparty/include/common
+COMMON_LIB=./thirdparty/lib
 
 
