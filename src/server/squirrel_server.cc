@@ -7,6 +7,8 @@
 #include "src/proto/squirrel_rpc.pb.h"
 #include "src/db/dummy_db.h"
 
+extern std::string CONF_server_port;
+
 namespace baidu {
 namespace squirrel {
 namespace server {
@@ -57,10 +59,10 @@ int main() {
   SOFA_PBRPC_SET_LOG_LEVEL(INFO);
 
   sofa::pbrpc::RpcServerOptions options;
-  options.work_thread_num = 4;
+  //options.work_thread_num = 4;
   sofa::pbrpc::RpcServer rpc_server(options);
 
-  if (!rpc_server.Start("0.0.0.0:8221")) {
+  if (!rpc_server.Start("0.0.0.0:" + CONF_server_port)) {
     SLOG(ERROR, "start server failed");
     return EXIT_FAILURE;
   }

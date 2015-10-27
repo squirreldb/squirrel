@@ -5,9 +5,12 @@
 #ifndef CLIENT_SQUIRREL_CLIENT_H
 #define CLIENT_SQUIRREL_CLIENT_H
 
+#include <sofa/pbrpc/pbrpc.h>
 #include <thread_pool.h>
 #include <mutex.h>
 #include <counter.h>
+
+#include "src/proto/squirrel_rpc.pb.h"
 
 namespace baidu {
 namespace squirrel {
