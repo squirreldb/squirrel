@@ -22,7 +22,7 @@ before_script:
     - sed -i 's/^SNAPPY_DIR=.*/SNAPPY_DIR=\/usr\/local/' depends.mk
     - sed -i 's/^BOOST_HEADER_DIR=.*/BOOST_HEADER_DIR=\/usr\/local\/include/' depends.mk
     - sed -i 's/^COMMON_INC=.*/COMMON_INC=.\/common\/include/' depends.mk
-    - sed -i 's/^COMMON_LIB=.*/COMMON_LIB=.\/common\/lib/' depends.mk
+    - sed -i 's/^COMMON_LIB=.*/COMMON_LIB=.\/common/' depends.mk
     
 script:
     - make -j4

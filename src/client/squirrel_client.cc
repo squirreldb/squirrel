@@ -76,34 +76,29 @@ void SquirrelClient::GetCallback(sofa::pbrpc::RpcController* cntl,
 }
 
 void SquirrelClient::Put(const std::string& key, const std::string& value, const bool is_delete) {
-  for (int i = 0; i < thread_num_; ++i) {
-    baidu::common::ThreadPool::Task task =
-        boost::bind(&SquirrelClient::DoPut, this, key, value, is_delete);
-    thread_pool_->AddTask(task);
-  }
+  baidu::common::ThreadPool::Task task =
+      boost::bind(&SquirrelClient::DoPut, this, key, value, is_delete);
+  thread_pool_->AddTask(task);
 }
 
 void SquirrelClient::DoPut(const std::string& key, const std::string& value, const bool is_delete) {
-  while (true) {
-    pthread_mutex_lock(&mutex_);
-    if (pending_ > 1000) {
-      usleep(1);
-    }
-    pthread_mutex_unlock(&mutex_);
-    Squirrel::PutRequest* request = new Squirrel::PutRequest();
-    request->set_key(key);
-    request->set_value(value);
-    request->set_is_delete(is_delete);
-
-    Squirrel::PutResponse* response = new Squirrel::PutResponse();
-    sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
-    cntl->SetTimeout(3000);
-    google::protobuf::Closure* done =
-      sofa::pbrpc::NewClosure(this, &SquirrelClient::PutCallback, cntl, request, response);
-
-    stub_->Put(cntl, request, response, done);
-    pending_ += 1;
+  if (pending_ > 1000) {
+    usleep(1);
   }
+  Squirrel::PutRequest* request = new Squirrel::PutRequest();
+  request->set_key(key);
+  request->set_value(value);
+  request->set_is_delete(is_delete);
+
+  Squirrel::PutResponse* response = new Squirrel::PutResponse();
+  sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
+  cntl->SetTimeout(3000);
+  google::protobuf::Closure* done =
+    sofa::pbrpc::NewClosure(this, &SquirrelClient::PutCallback, cntl, request, response);
+
+  pending_ += 1;
+  stub_->Put(cntl, request, response, done);
+
 }
 
 void SquirrelClient::Get(std::string key) {
@@ -135,12 +130,26 @@ void SquirrelClient::ResetStat() {
   pthread_mutex_unlock(&mutex_);
 }
 
+void test_put(SquirrelClient* client, std::string& key, std::string& value, bool is_delete) {
+  while (true) {
+    client->Put(key, value, is_delete);
+  }
+}
+
 int main(int argc, char * argv[]) {
   struct timeval tv_start, tv_end;
   gettimeofday(&tv_start, NULL);
 
   SquirrelClient client;
-  client.Put("k", "v", false);
+  // client.Put("k", "v", false);
+  std::string key = "k";
+  std::string value = "v";
+  baidu::common::ThreadPool thread_pool;
+  for (int i = 0; i < 2; ++i) {
+    baidu::common::ThreadPool::Task task =
+        boost::bind(&test_put, &client, key, value, false);
+    thread_pool.AddTask(task);
+  }
 
   while (true) {
     gettimeofday(&tv_end, NULL);
