@@ -7,7 +7,7 @@
 #include <thread.h>
 #include <boost/bind.hpp>
 
-#include "src/client/squirrel_client.h"
+#include "src/client/client.h"
 
 void test_put(baidu::squirrel::sdk::SquirrelClient* client, std::string& key,
               std::string& value, bool is_delete) {

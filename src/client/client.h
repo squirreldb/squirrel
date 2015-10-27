@@ -10,7 +10,7 @@
 #include <mutex.h>
 #include <counter.h>
 
-#include "src/proto/squirrel_rpc.pb.h"
+#include "src/proto/server_rpc.pb.h"
 
 namespace baidu {
 namespace squirrel {
@@ -45,7 +45,7 @@ private:
 
   sofa::pbrpc::RpcClient* rpc_client_;
   sofa::pbrpc::RpcChannel* rpc_channel_;
-  Squirrel::SquirrelServer_Stub* stub_;
+  Squirrel::Server_Stub* stub_;
 };
 
 } // namespace sdk

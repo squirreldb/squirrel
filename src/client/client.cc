@@ -9,7 +9,7 @@
 
 #include <boost/bind.hpp>
 
-#include "src/client/squirrel_client.h"
+#include "src/client/client.h"
 
 extern std::string CONF_server_addr;
 extern std::string CONF_server_port;
@@ -31,9 +31,11 @@ void SquirrelClient::init() {
   SOFA_PBRPC_SET_LOG_LEVEL(INFO);
 
   sofa::pbrpc::RpcClientOptions options;
+  // options.work_thread_num = 4;
+  // options.callback_thread_num = 4;
   rpc_client_ = new sofa::pbrpc::RpcClient(options);
   rpc_channel_ = new sofa::pbrpc::RpcChannel(rpc_client_, CONF_server_addr + ":" + CONF_server_port);
-  stub_ = new Squirrel::SquirrelServer_Stub(rpc_channel_);
+  stub_ = new Squirrel::Server_Stub(rpc_channel_);
 }
 
 void SquirrelClient::PutCallback(sofa::pbrpc::RpcController* cntl,
