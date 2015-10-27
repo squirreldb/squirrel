@@ -22,17 +22,20 @@ PROTO_SRC := $(PROTO_FILE:.proto=.pb.cc)
 PROTO_OBJ := $(PROTO_FILE:.proto=.pb.o)
 PROTO_OPTIONS := --proto_path=. --proto_path=$(SOFA_PBRPC)/include --proto_path=$(PROTOBUF_DIR)/include
 
-SERVER_SRC := $(wildcard src/server/*.cc)
-CLIENT_SRC := $(wildcard src/client/*.cc)
-DB_SRC := $(wildcard src/db/*.cc)
+CONF_SRC := conf.cc
+SERVER_SRC := $(wildcard src/server/*.cc) $(CONF_SRC)
+CLIENT_SRC := $(wildcard src/client/*.cc) $(CONF_SRC)
+DB_SRC := $(wildcard src/db/*.cc) $(CONF_SRC)
+TEST_SRC := $(wildcard src/test/*.cc) $(CONF_SRC)
 
 SERVER_OBJ := $(SERVER_SRC:.cc=.o)
 CLIENT_OBJ := $(CLIENT_SRC:.cc=.o)
 DB_OBJ := $(DB_SRC:.cc=.o)
+TEST_OBJ := $(TEST_SRC:.cc=.o)
 
-ALL_OBJ := $(SERVER_OBJ) $(CLIENT_OBJ) $(DB_OBJ)
+ALL_OBJ := $(SERVER_OBJ) $(CLIENT_OBJ) $(DB_OBJ) $(TEST_OBJ)
 
-BIN := squirrel_server squirrel_client
+BIN := squirrel_server driver
 
 all: $(BIN) $(PROTO_SRC)
 
@@ -47,6 +50,9 @@ squirrel_server: $(PROTO_OBJ) $(SERVER_OBJ) $(DB_OBJ)
 	$(CXX) $^ -o $@ $(LIBRARY) $(LDFLAGS)
 
 squirrel_client: $(PROTO_OBJ) $(CLIENT_OBJ)
+	$(CXX) $^ -o $@ $(LIBRARY) $(LDFLAGS)
+
+driver: $(PROTO_OBJ) $(CLIENT_OBJ) $(TEST_OBJ)
 	$(CXX) $^ -o $@ $(LIBRARY) $(LDFLAGS)
 
 %.pb.cc: %.proto
