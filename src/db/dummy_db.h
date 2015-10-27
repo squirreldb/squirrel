@@ -5,10 +5,15 @@
 #ifndef SQUIRREL_DB_H_
 #define SQUIRREL_DB_H_
 
-#include <pthread.h>
 #include <iostream>
 #include <string>
 #include <map>
+
+#include <mutex.h>
+
+namespace baidu {
+namespace squirrel {
+namespace db {
 
 class DummyDB {
 public:
@@ -16,12 +21,16 @@ public:
   // status = 0: success
   // status = 1: not found
   // status = 2: other
-  void Put(const std::string key, const std::string value, bool is_delete, int* status);
-  void Get(const std::string key, std::string* value, int* status);
+  void Put(const std::string& key, const std::string& value, bool is_delete, int* status);
+  void Get(const std::string& key, std::string* value, int* status);
 
 private:
   std::map<std::string, std::string> db_;
-  pthread_mutex_t mutex_;
+  Mutex mutex_;
 };
+
+} // namespace db
+} // namespace squirrel
+} // namespace baidu
 
 #endif //  SQUIRREL_DB_H_

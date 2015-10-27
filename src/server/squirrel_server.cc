@@ -7,6 +7,10 @@
 #include "src/proto/squirrel_rpc.pb.h"
 #include "src/db/dummy_db.h"
 
+namespace baidu {
+namespace squirrel {
+namespace server {
+
 class DummyDBImpl : public Squirrel::SquirrelServer {
 public:
   DummyDBImpl() : count(0) {}
@@ -41,9 +45,13 @@ private:
   }
 
 private:
-  DummyDB db_;
+  db::DummyDB db_;
   int count;
 };
+
+} //namespace server
+} // namespace squirrel
+} // namespace baidu
 
 int main() {
   SOFA_PBRPC_SET_LOG_LEVEL(INFO);
@@ -52,12 +60,12 @@ int main() {
   options.work_thread_num = 4;
   sofa::pbrpc::RpcServer rpc_server(options);
 
-  if (!rpc_server.Start("0.0.0.0:11221")) {
+  if (!rpc_server.Start("0.0.0.0:8221")) {
     SLOG(ERROR, "start server failed");
     return EXIT_FAILURE;
   }
 
-  Squirrel::SquirrelServer* dummy_db_service = new DummyDBImpl();
+  Squirrel::SquirrelServer* dummy_db_service = new baidu::squirrel::server::DummyDBImpl();
   if (!rpc_server.RegisterService(dummy_db_service)) {
     SLOG(ERROR, "register service failed");
     return EXIT_FAILURE;
