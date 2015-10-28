@@ -24,7 +24,7 @@ message GetResponse {
   optional int32 status = 2;
 }
 
-service SquirrelServer {
+service Server {
   rpc Put(PutRequest) returns(PutResponse);
   rpc Get(GetRequest) returns(GetResponse);
 }

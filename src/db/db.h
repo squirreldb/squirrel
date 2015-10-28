@@ -15,9 +15,9 @@ namespace baidu {
 namespace squirrel {
 namespace db {
 
-class DummyDB {
+class DB {
 public:
-  DummyDB();
+  DB();
   // status = 0: success
   // status = 1: not found
   // status = 2: other

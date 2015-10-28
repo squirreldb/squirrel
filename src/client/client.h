@@ -10,17 +10,17 @@
 #include <mutex.h>
 #include <counter.h>
 
-#include "src/proto/squirrel_rpc.pb.h"
+#include "src/proto/server_rpc.pb.h"
 
 namespace baidu {
 namespace squirrel {
 namespace sdk {
 
-class SquirrelClient
+class Client
 {
 public:
-  SquirrelClient();
-  ~SquirrelClient();
+  Client();
+  ~Client();
   void init();
 
   void Put(const std::string& key, const std::string& value, const bool is_delete);
@@ -30,7 +30,6 @@ public:
   void ResetStat();
 
 private:
-  void DoPut(const std::string& key, const std::string& value, const bool is_delete);
   void PutCallback(sofa::pbrpc::RpcController* cntl, Squirrel::PutRequest* request,
                    Squirrel::PutResponse* response);
   void GetCallback(sofa::pbrpc::RpcController* cntl, Squirrel::GetRequest* request,
@@ -45,7 +44,7 @@ private:
 
   sofa::pbrpc::RpcClient* rpc_client_;
   sofa::pbrpc::RpcChannel* rpc_channel_;
-  Squirrel::SquirrelServer_Stub* stub_;
+  Squirrel::Server_Stub* stub_;
 };
 
 } // namespace sdk

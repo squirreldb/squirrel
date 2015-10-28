@@ -4,8 +4,8 @@
 
 #include <sofa/pbrpc/pbrpc.h>
 #include <iostream>
-#include "src/proto/squirrel_rpc.pb.h"
-#include "src/db/dummy_db.h"
+#include "src/proto/server_rpc.pb.h"
+#include "src/db/db.h"
 
 extern std::string CONF_server_port;
 
@@ -13,10 +13,10 @@ namespace baidu {
 namespace squirrel {
 namespace server {
 
-class DummyDBImpl : public Squirrel::SquirrelServer {
+class ServerImpl : public Squirrel::Server {
 public:
-  DummyDBImpl() : count(0) {}
-  virtual ~DummyDBImpl() {}
+  ServerImpl() : count(0) {}
+  virtual ~ServerImpl() {}
 
 private:
   virtual void Put(google::protobuf::RpcController* controller,
@@ -28,7 +28,7 @@ private:
     }
     ++count;
     int status = 0;
-    db_.Put(request->key(), request->value(), request->is_delete(), &status);
+    //db_.Put(request->key(), request->value(), request->is_delete(), &status);
     response->set_status(status);
     done->Run();
   }
@@ -47,7 +47,7 @@ private:
   }
 
 private:
-  db::DummyDB db_;
+  db::DB db_;
   int count;
 };
 
@@ -59,7 +59,7 @@ int main() {
   SOFA_PBRPC_SET_LOG_LEVEL(INFO);
 
   sofa::pbrpc::RpcServerOptions options;
-  //options.work_thread_num = 4;
+  options.work_thread_num = 4;
   sofa::pbrpc::RpcServer rpc_server(options);
 
   if (!rpc_server.Start("0.0.0.0:" + CONF_server_port)) {
@@ -67,8 +67,8 @@ int main() {
     return EXIT_FAILURE;
   }
 
-  Squirrel::SquirrelServer* dummy_db_service = new baidu::squirrel::server::DummyDBImpl();
-  if (!rpc_server.RegisterService(dummy_db_service)) {
+  Squirrel::Server* server_service = new baidu::squirrel::server::ServerImpl();
+  if (!rpc_server.RegisterService(server_service)) {
     SLOG(ERROR, "register service failed");
     return EXIT_FAILURE;
   }

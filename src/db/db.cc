@@ -3,15 +3,15 @@
 // found in the LICENSE file.
 
 #include <iostream>
-#include "dummy_db.h"
+#include "db.h"
 
 namespace baidu {
 namespace squirrel {
 namespace db {
 
-DummyDB::DummyDB() {}
+DB::DB() {}
 
-void DummyDB::Put(const std::string& key, const std::string& value, bool is_delete, int* status) {
+void DB::Put(const std::string& key, const std::string& value, bool is_delete, int* status) {
   std::map<std::string, std::string>::iterator it;
   MutexLock lock(&mutex_);
   if (is_delete) {
@@ -29,7 +29,7 @@ void DummyDB::Put(const std::string& key, const std::string& value, bool is_dele
   }
 }
 
-void DummyDB::Get(const std::string& key, std::string* value, int* status) {
+void DB::Get(const std::string& key, std::string* value, int* status) {
   MutexLock lock(&mutex_);
   std::map<std::string, std::string>::iterator it = db_.find(key);
   if (it == db_.end()) {
