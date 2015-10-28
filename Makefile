@@ -38,6 +38,7 @@ ALL_OBJ := $(SERVER_OBJ) $(CLIENT_OBJ) $(DB_OBJ) $(TEST_OBJ)
 BIN := squirrel_server driver
 
 all: $(BIN) $(PROTO_SRC)
+	@echo 'Done'
 
 .PHONY: clean
 
