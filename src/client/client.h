@@ -16,11 +16,11 @@ namespace baidu {
 namespace squirrel {
 namespace sdk {
 
-class SquirrelClient
+class Client
 {
 public:
-  SquirrelClient();
-  ~SquirrelClient();
+  Client();
+  ~Client();
   void init();
 
   void Put(const std::string& key, const std::string& value, const bool is_delete);
@@ -30,7 +30,6 @@ public:
   void ResetStat();
 
 private:
-  void DoPut(const std::string& key, const std::string& value, const bool is_delete);
   void PutCallback(sofa::pbrpc::RpcController* cntl, Squirrel::PutRequest* request,
                    Squirrel::PutResponse* response);
   void GetCallback(sofa::pbrpc::RpcController* cntl, Squirrel::GetRequest* request,

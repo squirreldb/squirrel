@@ -9,13 +9,14 @@
 
 #include "src/client/client.h"
 
-void test_put(baidu::squirrel::sdk::SquirrelClient* client, std::string& key,
+void test_put(baidu::squirrel::sdk::Client* client, std::string& key,
               std::string& value, bool is_delete) {
   while (true) {
     int thread_pool_pending;
     client->GetStat(NULL, NULL, NULL, &thread_pool_pending, NULL);
-    if (thread_pool_pending > 100) {
-      usleep(5000);
+    while (thread_pool_pending > 100) {
+      usleep(500);
+      client->GetStat(NULL, NULL, NULL, &thread_pool_pending, NULL);
     }
     client->Put(key, value, is_delete);
   }
@@ -25,7 +26,7 @@ int main() {
   struct timeval tv_start, tv_end;
   gettimeofday(&tv_start, NULL);
 
-  baidu::squirrel::sdk::SquirrelClient client;
+  baidu::squirrel::sdk::Client client;
   std::string key = "k";
   std::string value = "v";
 
