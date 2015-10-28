@@ -85,10 +85,9 @@ if [ ! -f "${FLAG_DIR}/common" ] \
     rm -rf common
     git clone https://github.com/baidu/common
     cd common
+    sed -i 's/^PREFIX=.*/PREFIX=..\/..\/thirdparty/' config.mk
     make -j4
-    mkdir -p ${DEPS_PREFIX}/include/common
-    cp include/* ${DEPS_PREFIX}/include/common/
-    cp libcommon.a ${DEPS_PREFIX}/lib
+    make install
     cd -
     touch "${FLAG_DIR}/common"
 fi
@@ -103,7 +102,7 @@ sed -i 's/^SOFA_PBRPC=.*/SOFA_PBRPC=.\/thirdparty/' depends.mk
 sed -i 's/^PROTOBUF_DIR=.*/PROTOBUF_DIR=.\/thirdparty/' depends.mk
 sed -i 's/^SNAPPY_DIR=.*/SNAPPY_DIR=.\/thirdparty/' depends.mk
 sed -i 's/^BOOST_HEADER_DIR=.*/BOOST_HEADER_DIR=.\/thirdparty\/boost_1_57_0/' depends.mk
-sed -i 's/^COMMON_INC=.*/COMMON_INC=.\/thirdparty\/include\/common/' depends.mk
+sed -i 's/^COMMON_INC=.*/COMMON_INC=.\/thirdparty\/include/' depends.mk
 sed -i 's/^COMMON_LIB=.*/COMMON_LIB=.\/thirdparty\/lib/' depends.mk
 
 ########################################
