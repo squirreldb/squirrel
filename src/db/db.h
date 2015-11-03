@@ -9,6 +9,9 @@
 #include <string>
 #include <map>
 
+#include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
+
 #include <mutex.h>
 
 namespace baidu {
@@ -21,11 +24,12 @@ public:
   // status = 0: success
   // status = 1: not found
   // status = 2: other
-  void Put(const std::string& key, const std::string& value, bool is_delete, int* status);
+  void Put(const std::string& key, const std::string& value, int* status);
   void Get(const std::string& key, std::string* value, int* status);
 
 private:
-  std::map<std::string, std::string> db_;
+  boost::format* fmter_;
+  uint64_t file_num_;
   Mutex mutex_;
 };
 

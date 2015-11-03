@@ -23,8 +23,9 @@ public:
   ~Client();
   void init();
 
-  void Put(const std::string& key, const std::string& value, const bool is_delete);
-  void Get(std::string key);
+  void Put(const std::string& key, const std::string& value);
+  void Get(const std::string& key, std::string* value);
+  void Delete(const std::string& key, int32_t* status);
 
   void GetStat(int* count, int* failed, int* pending, int* thread_pool_pendin, std::string* str);
   void ResetStat();
@@ -34,6 +35,8 @@ private:
                    Squirrel::PutResponse* response);
   void GetCallback(sofa::pbrpc::RpcController* cntl, Squirrel::GetRequest* request,
                    Squirrel::GetResponse* response);
+  void DeleteCallback(sofa::pbrpc::RpcController* cntl, Squirrel::DeleteRequest* request,
+                      Squirrel::DeleteResponse* response);
 
 private:
   int thread_num_;

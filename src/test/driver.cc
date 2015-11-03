@@ -10,7 +10,7 @@
 #include "src/client/client.h"
 
 void test_put(baidu::squirrel::sdk::Client* client, std::string& key,
-              std::string& value, bool is_delete) {
+              std::string& value) {
   while (true) {
     int thread_pool_pending;
     client->GetStat(NULL, NULL, NULL, &thread_pool_pending, NULL);
@@ -18,7 +18,7 @@ void test_put(baidu::squirrel::sdk::Client* client, std::string& key,
       usleep(500);
       client->GetStat(NULL, NULL, NULL, &thread_pool_pending, NULL);
     }
-    client->Put(key, value, is_delete);
+    client->Put(key, value);
   }
 }
 
@@ -31,7 +31,7 @@ int main() {
   std::string value = "v";
 
   baidu::common::Thread thread;
-  thread.Start(boost::bind(&test_put, &client, key, value, false));
+  thread.Start(boost::bind(&test_put, &client, key, value));
 
   while (true) {
     gettimeofday(&tv_end, NULL);
