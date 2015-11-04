@@ -19,19 +19,19 @@ namespace baidu {
 namespace squirrel {
 namespace server {
 
-class ServerImpl : public Squirrel::Server {
+class ServerImpl : public sdk::Server {
 public:
   ServerImpl();
   virtual ~ServerImpl() {}
 
 private:
   virtual void Put(google::protobuf::RpcController* controller,
-                   const Squirrel::PutRequest* request,
-                   Squirrel::PutResponse* response,
+                   const sdk::PutRequest* request,
+                   sdk::PutResponse* response,
                    google::protobuf::Closure* done);
   virtual void Get(google::protobuf::RpcController* controller,
-                   const Squirrel::GetRequest* request,
-                   Squirrel::GetResponse* response,
+                   const sdk::GetRequest* request,
+                   sdk::GetResponse* response,
                    google::protobuf::Closure* done);
 
 private:

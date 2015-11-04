@@ -14,14 +14,14 @@ namespace server {
 ServerImpl::ServerImpl() : db_(new db::DB()) { }
 
 void ServerImpl::Put(google::protobuf::RpcController* controller,
-                     const Squirrel::PutRequest* request,
-                     Squirrel::PutResponse* response,
+                     const sdk::PutRequest* request,
+                     sdk::PutResponse* response,
                      google::protobuf::Closure* done) {
   if (count_.Get() % 1000000 == 0) { // not for counting, but for heartbeat detect
     SLOG(INFO, "receive put request: %s", request->key().c_str());
   }
   count_.Inc();
-  int status = 0;
+  StatusCode status = kOK;
   std::string key = request->key();
   std::string value = request->value();
 
@@ -32,12 +32,12 @@ void ServerImpl::Put(google::protobuf::RpcController* controller,
   }
 
 void ServerImpl::Get(google::protobuf::RpcController* controller,
-                     const Squirrel::GetRequest* request,
-                     Squirrel::GetResponse* response,
+                     const sdk::GetRequest* request,
+                     sdk::GetResponse* response,
                      google::protobuf::Closure* done) {
   SLOG(INFO, "receive get request: %s", request->key().c_str());
   std::string value;
-  int status = 0;
+  StatusCode status = kOK;
   db_->Get(request->key(), &value, &status);
   response->set_value(value);
   response->set_status(status);

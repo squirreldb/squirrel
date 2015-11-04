@@ -12,6 +12,7 @@
 
 #include <mutex.h>
 
+#include "src/proto/status_code.pb.h"
 #include "index_db.h"
 
 namespace baidu {
@@ -21,10 +22,8 @@ namespace db {
 class DB {
 public:
   DB();
-  // status = 0: success
-  // status = 1: other
-  void Put(const std::string& key, const std::string& value, int* status);
-  void Get(const std::string& key, std::string* value, int* status);
+  void Put(const std::string& key, const std::string& value, StatusCode* status);
+  void Get(const std::string& key, std::string* value, StatusCode* status);
 
 private:
   Mutex mutex_;

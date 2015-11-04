@@ -11,6 +11,7 @@
 #include <counter.h>
 
 #include "src/proto/server_rpc.pb.h"
+#include "src/proto/status_code.pb.h"
 
 namespace baidu {
 namespace squirrel {
@@ -25,18 +26,18 @@ public:
 
   void Put(const std::string& key, const std::string& value);
   void Get(const std::string& key, std::string* value);
-  void Delete(const std::string& key, int32_t* status);
+  void Delete(const std::string& key, StatusCode* status);
 
   void GetStat(int* count, int* failed, int* pending, int* thread_pool_pendin, std::string* str);
   void ResetStat();
 
 private:
-  void PutCallback(sofa::pbrpc::RpcController* cntl, Squirrel::PutRequest* request,
-                   Squirrel::PutResponse* response);
-  void GetCallback(sofa::pbrpc::RpcController* cntl, Squirrel::GetRequest* request,
-                   Squirrel::GetResponse* response);
-  void DeleteCallback(sofa::pbrpc::RpcController* cntl, Squirrel::DeleteRequest* request,
-                      Squirrel::DeleteResponse* response);
+  void PutCallback(sofa::pbrpc::RpcController* cntl, PutRequest* request,
+                   PutResponse* response);
+  void GetCallback(sofa::pbrpc::RpcController* cntl, GetRequest* request,
+                   GetResponse* response);
+  void DeleteCallback(sofa::pbrpc::RpcController* cntl, DeleteRequest* request,
+                      DeleteResponse* response);
 
 private:
   int thread_num_;
@@ -47,7 +48,7 @@ private:
 
   sofa::pbrpc::RpcClient* rpc_client_;
   sofa::pbrpc::RpcChannel* rpc_channel_;
-  Squirrel::Server_Stub* stub_;
+  Server_Stub* stub_;
 };
 
 } // namespace sdk

@@ -11,6 +11,7 @@ OPT ?= -g2      # (B) Debug mode, w/ full line-level debugging symbols
 CXX=g++
 INCPATH=-I. -I$(SOFA_PBRPC)/include -I$(BOOST_HEADER_DIR) -I$(PROTOBUF_DIR)/include \
 		-I$(SNAPPY_DIR)/include -I$(ZLIB_DIR)/include -I$(COMMON_INC)
+
 CXXFLAGS += $(OPT) -pipe -W -Wall -fPIC -D_GNU_SOURCE -D__STDC_LIMIT_MACROS $(INCPATH)
 
 LIBRARY=$(SOFA_PBRPC)/lib/libsofa-pbrpc.a $(PROTOBUF_DIR)/lib/libprotobuf.a \
@@ -59,5 +60,9 @@ driver: $(PROTO_OBJ) $(CLIENT_OBJ) $(TEST_OBJ)
 %.pb.cc: %.proto
 	$(PROTOBUF_DIR)/bin/protoc $(PROTO_OPTIONS) --cpp_out=. $<
 
-%.o: %.cc %.h
+%.pb.h: %.proto
+	$(PROTOBUF_DIR)/bin/protoc $(PROTO_OPTIONS) --cpp_out=. $<
+
+
+$(PROTO_OBJ): %.o: %.cc %.h $(PROTO_SRC)
 	$(CXX) $(CXXFLAGS) -c $< -o $@

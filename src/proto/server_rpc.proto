@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package Squirrel;
+import "src/proto/status_code.proto";
+
+package baidu.squirrel.sdk;
 option cc_generic_services = true;
 
 message PutRequest {
@@ -11,7 +13,7 @@ message PutRequest {
 }
 
 message PutResponse {
-  optional int32 status = 1;
+  optional StatusCode status = 1;
 }
 
 message GetRequest {
@@ -20,7 +22,7 @@ message GetRequest {
 
 message GetResponse {
   optional bytes value = 1;
-  optional int32 status = 2;
+  optional StatusCode status = 2;
 }
 
 message DeleteRequest {
@@ -28,7 +30,7 @@ message DeleteRequest {
 }
 
 message DeleteResponse {
-    optional int32 status = 2;
+    optional StatusCode status = 2;
 }
 
 service Server {

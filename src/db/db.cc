@@ -21,7 +21,7 @@ DB::DB() : file_num_(0), offset_(0), index_(new IndexDB()) {
   fout_ = new std::ofstream(filename_.c_str(), std::ofstream::out);
 }
 
-void DB::Put(const std::string& key, const std::string& value, int* status) {
+void DB::Put(const std::string& key, const std::string& value, StatusCode* status) {
   uint32_t key_len = key.length();
   uint32_t value_len = value.length();
   boost::format fmter("%04d");
@@ -34,7 +34,7 @@ void DB::Put(const std::string& key, const std::string& value, int* status) {
   MutexLock lock(&mutex_);
   (*fout_) << keylen_str << valuelen_str << key << value << std::endl;
   meta->offset = offset_;
-  meta->length = 4 + key_len + 4 + value_len;
+  meta->length = 8 + key_len + value_len;
   meta->filename = filename_;
   offset_ += meta->length;
   mutex_.Unlock();
@@ -42,7 +42,7 @@ void DB::Put(const std::string& key, const std::string& value, int* status) {
   index_->Put(key, meta);
 }
 
-void DB::Get(const std::string& key, std::string* value, int* status) {
+void DB::Get(const std::string& key, std::string* value, StatusCode* status) {
   MutexLock lock(&mutex_);
 }
 
