@@ -11,6 +11,8 @@ namespace baidu {
 namespace squirrel {
 namespace server {
 
+ServerImpl::ServerImpl() : db_(new db::DB()) { }
+
 void ServerImpl::Put(google::protobuf::RpcController* controller,
                      const Squirrel::PutRequest* request,
                      Squirrel::PutResponse* response,
@@ -20,22 +22,10 @@ void ServerImpl::Put(google::protobuf::RpcController* controller,
   }
   count_.Inc();
   int status = 0;
-  // write data into database
-  uint32_t offset = 0;
-  std::string filename;
   std::string key = request->key();
   std::string value = request->value();
-  uint32_t length = key.length() + value.length() + 8;
-  std::cerr << "total=" << length << std::endl;
-  db_.Put(key, key.length(), value, value.length(), &offset, &filename, &status);
 
-  // write index
-  EntryMeta meta = {filename, offset, length};
-  MutexLock lock(&mutex_);
-  index_[key] = meta;
-  std::map<std::string, EntryMeta>::iterator it = index_.begin();
-  std::cerr << key << ":" << meta.filename << "-" << meta.offset << "-" << meta.length << std::endl;
-  mutex_.Unlock();
+  db_->Put(key, value, &status);
 
   response->set_status(status);
   done->Run();
@@ -48,7 +38,7 @@ void ServerImpl::Get(google::protobuf::RpcController* controller,
   SLOG(INFO, "receive get request: %s", request->key().c_str());
   std::string value;
   int status = 0;
-  db_.Get(request->key(), &value, &status);
+  db_->Get(request->key(), &value, &status);
   response->set_value(value);
   response->set_status(status);
   done->Run();

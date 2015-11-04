@@ -78,7 +78,7 @@ void Client::DeleteCallback(sofa::pbrpc::RpcController* cntl, Squirrel::DeleteRe
 
 void Client::Put(const std::string& key, const std::string& value) {
   while (pending_.Get() > CONF_put_pending) {
-    sleep(1);
+    usleep(1000);
   }
   Squirrel::PutRequest* request = new Squirrel::PutRequest();
   request->set_key(key);

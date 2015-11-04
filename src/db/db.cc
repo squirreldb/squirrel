@@ -14,27 +14,32 @@ namespace baidu {
 namespace squirrel {
 namespace db {
 
-DB::DB() : file_num_(0), offset_(0) {
+DB::DB() : file_num_(0), offset_(0), index_(new IndexDB()) {
   filename_ = boost::lexical_cast<std::string>(file_num_);
   filename_ += ".data";
   std::cerr << "write to file " << filename_ << std::endl;
   fout_ = new std::ofstream(filename_.c_str(), std::ofstream::out);
 }
 
-void DB::Put(const std::string& key, uint32_t key_len,
-                 const std::string& value, uint32_t value_len,
-                 uint32_t* offset, std::string* filename, int* status) {
+void DB::Put(const std::string& key, const std::string& value, int* status) {
+  uint32_t key_len = key.length();
+  uint32_t value_len = value.length();
   boost::format fmter("%04d");
   fmter % key_len;
   std::string keylen_str = fmter.str();
   fmter % value_len;
   std::string valuelen_str = fmter.str();
 
+  EntryMeta* meta = new EntryMeta();
   MutexLock lock(&mutex_);
-  (*fout_) << keylen_str << key << valuelen_str << value << std::endl;
-  *offset = offset_;
-  *filename = filename_;
-  offset_ += 4 + key_len + 4 + value_len;
+  (*fout_) << keylen_str << valuelen_str << key << value << std::endl;
+  meta->offset = offset_;
+  meta->length = 4 + key_len + 4 + value_len;
+  meta->filename = filename_;
+  offset_ += meta->length;
+  mutex_.Unlock();
+
+  index_->Put(key, meta);
 }
 
 void DB::Get(const std::string& key, std::string* value, int* status) {
