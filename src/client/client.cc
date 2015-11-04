@@ -46,8 +46,8 @@ void Client::PutCallback(sofa::pbrpc::RpcController* cntl,
     failed_.Inc();
   } else {
     count_.Inc();
-    pending_.Dec();
   }
+  pending_.Dec();
 
   delete cntl;
   delete request;
@@ -71,14 +71,18 @@ void Client::GetCallback(sofa::pbrpc::RpcController* cntl,
   delete response;
 }
 
-void Client::Put(const std::string& key, const std::string& value, const bool is_delete) {
+void Client::DeleteCallback(sofa::pbrpc::RpcController* cntl, Squirrel::DeleteRequest* request,
+                            Squirrel::DeleteResponse* response) {
+  // TODO
+}
+
+void Client::Put(const std::string& key, const std::string& value) {
   while (pending_.Get() > CONF_put_pending) {
-    usleep(3);
+    sleep(1);
   }
   Squirrel::PutRequest* request = new Squirrel::PutRequest();
   request->set_key(key);
   request->set_value(value);
-  request->set_is_delete(is_delete);
 
   Squirrel::PutResponse* response = new Squirrel::PutResponse();
   sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
@@ -92,7 +96,7 @@ void Client::Put(const std::string& key, const std::string& value, const bool is
   thread_pool_->AddTask(task);
 }
 
-void Client::Get(std::string key) {
+void Client::Get(const std::string& key, std::string* value) {
   Squirrel::GetRequest* request = new Squirrel::GetRequest();
   request->set_key(key);
 
@@ -103,6 +107,10 @@ void Client::Get(std::string key) {
     sofa::pbrpc::NewClosure(this, &Client::GetCallback, cntl, request, response);
 
   stub_->Get(cntl, request, response, done);
+}
+
+void Client::Delete(const std::string& key, int32_t* status) {
+  // TODO
 }
 
 void Client::GetStat(int* count, int* failed, int* pending,

@@ -6,6 +6,7 @@
 #define SQUIRREL_DB_H_
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <map>
 
@@ -19,14 +20,18 @@ class DB {
 public:
   DB();
   // status = 0: success
-  // status = 1: not found
-  // status = 2: other
-  void Put(const std::string& key, const std::string& value, bool is_delete, int* status);
+  // status = 1: other
+  void Put(const std::string& key, uint32_t key_len,
+           const std::string& value, uint32_t value_len,
+           uint32_t* offset, std::string* filename, int* status);
   void Get(const std::string& key, std::string* value, int* status);
 
 private:
-  std::map<std::string, std::string> db_;
   Mutex mutex_;
+  uint64_t file_num_;
+  std::string filename_;
+  std::ofstream* fout_;
+  uint32_t offset_;
 };
 
 } // namespace db

@@ -8,7 +8,7 @@
 
 // sdk
 int CONF_thread_num = 4;
-int CONF_put_pending = 1000;
+int CONF_put_pending = 1;
 
 // server
 std::string CONF_server_addr = "st01-spi-session1.st01.baidu.com";
