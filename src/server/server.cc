@@ -20,7 +20,23 @@ void ServerImpl::Put(google::protobuf::RpcController* controller,
   }
   count_.Inc();
   int status = 0;
-  db_.Put(request->key(), request->value(), &status);
+  // write data into database
+  uint32_t offset = 0;
+  std::string filename;
+  std::string key = request->key();
+  std::string value = request->value();
+  uint32_t length = key.length() + value.length() + 8;
+  std::cerr << "total=" << length << std::endl;
+  db_.Put(key, key.length(), value, value.length(), &offset, &filename, &status);
+
+  // write index
+  EntryMeta meta = {filename, offset, length};
+  MutexLock lock(&mutex_);
+  index_[key] = meta;
+  std::map<std::string, EntryMeta>::iterator it = index_.begin();
+  std::cerr << key << ":" << meta.filename << "-" << meta.offset << "-" << meta.length << std::endl;
+  mutex_.Unlock();
+
   response->set_status(status);
   done->Run();
   }

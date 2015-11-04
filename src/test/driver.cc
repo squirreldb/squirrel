@@ -6,11 +6,13 @@
 
 #include <thread.h>
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "src/client/client.h"
 
-void test_put(baidu::squirrel::sdk::Client* client, std::string& key,
-              std::string& value) {
+void test_put(baidu::squirrel::sdk::Client* client) {
+  uint64_t key_int = 0;
+  uint64_t value_int = 0;
   while (true) {
     int thread_pool_pending;
     client->GetStat(NULL, NULL, NULL, &thread_pool_pending, NULL);
@@ -18,7 +20,11 @@ void test_put(baidu::squirrel::sdk::Client* client, std::string& key,
       usleep(500);
       client->GetStat(NULL, NULL, NULL, &thread_pool_pending, NULL);
     }
+    std::string key = boost::lexical_cast<std::string>(key_int);
+    std::string value = boost::lexical_cast<std::string>(value_int);
     client->Put(key, value);
+    ++key_int;
+    ++value_int;
   }
 }
 
@@ -27,11 +33,9 @@ int main() {
   gettimeofday(&tv_start, NULL);
 
   baidu::squirrel::sdk::Client client;
-  std::string key = "k";
-  std::string value = "v";
 
   baidu::common::Thread thread;
-  thread.Start(boost::bind(&test_put, &client, key, value));
+  thread.Start(boost::bind(&test_put, &client));
 
   while (true) {
     gettimeofday(&tv_end, NULL);
