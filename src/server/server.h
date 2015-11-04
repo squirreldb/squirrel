@@ -21,14 +21,7 @@ namespace server {
 
 class ServerImpl : public Squirrel::Server {
 public:
-  struct EntryMeta
-  {
-    std::string filename;
-    int64_t offset;
-    int32_t length;
-  };
-
-  ServerImpl() {}
+  ServerImpl();
   virtual ~ServerImpl() {}
 
 private:
@@ -44,8 +37,7 @@ private:
 private:
   Mutex mutex_;
   common::Counter count_;
-  std::map<std::string, EntryMeta> index_;
-  db::DB db_;
+  db::DB* db_;
 };
 
 } // namespace server

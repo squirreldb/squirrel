@@ -12,6 +12,8 @@
 
 #include <mutex.h>
 
+#include "index_db.h"
+
 namespace baidu {
 namespace squirrel {
 namespace db {
@@ -21,9 +23,7 @@ public:
   DB();
   // status = 0: success
   // status = 1: other
-  void Put(const std::string& key, uint32_t key_len,
-           const std::string& value, uint32_t value_len,
-           uint32_t* offset, std::string* filename, int* status);
+  void Put(const std::string& key, const std::string& value, int* status);
   void Get(const std::string& key, std::string* value, int* status);
 
 private:
@@ -32,10 +32,12 @@ private:
   std::string filename_;
   std::ofstream* fout_;
   uint32_t offset_;
+
+  IndexDB* index_;
 };
 
 } // namespace db
 } // namespace squirrel
 } // namespace baidu
 
-#endif //  SQUIRREL_DB_H_
+#endif // SQUIRREL_DB_H_
