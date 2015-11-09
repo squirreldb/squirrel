@@ -1,0 +1,10 @@
+// Copyright (c) 2015, squirreldb. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+package baidu.squirrel;
+
+enum StatusCode {
+  kOK = 1;
+  kKeyNotFound = 2;
+}

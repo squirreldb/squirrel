@@ -37,12 +37,11 @@ void ServerImpl::Get(google::protobuf::RpcController* controller,
                      google::protobuf::Closure* done) {
   SLOG(INFO, "receive get request: %s", request->key().c_str());
   std::string value;
-  StatusCode status = kOK;
-  db_->Get(request->key(), &value, &status);
+  StatusCode status = db_->Get(request->key(), &value);
   response->set_value(value);
   response->set_status(status);
   done->Run();
-  }
+}
 
 } // namespace server
 } // namespace squirrel

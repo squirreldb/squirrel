@@ -23,7 +23,7 @@ class DB {
 public:
   DB();
   void Put(const std::string& key, const std::string& value, StatusCode* status);
-  void Get(const std::string& key, std::string* value, StatusCode* status);
+  StatusCode Get(const std::string& key, std::string* value);
 
 private:
   Mutex mutex_;

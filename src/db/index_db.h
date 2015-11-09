@@ -9,6 +9,9 @@
 #include <string>
 
 #include <mutex.h>
+#include <boost/lexical_cast.hpp>
+
+#include "src/proto/status_code.pb.h"
 
 namespace baidu {
 namespace squirrel {
@@ -17,14 +20,21 @@ namespace db {
 struct EntryMeta
 {
   std::string filename;
-  int64_t offset;
+  int32_t offset;
   int32_t length;
+
+  std::string ToString() {
+    return "filename=" + filename +
+           " offset=" + boost::lexical_cast<std::string>(offset) +
+           " length=" + boost::lexical_cast<std::string>(length);
+    }
 };
 
 class IndexDB {
 public:
   IndexDB();
   void Put(const std::string& key, EntryMeta* meta);
+  StatusCode Get(const std::string& key, EntryMeta** meta);
 
 private:
   Mutex mutex_;

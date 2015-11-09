@@ -17,6 +17,14 @@ namespace baidu {
 namespace squirrel {
 namespace sdk {
 
+typedef boost::function<void (std::string*, StatusCode*)> UserGetCallbackFunc;
+struct UserGetCallback {
+  UserGetCallbackFunc callback;
+  Mutex mutex;
+  CondVar cond;
+  UserGetCallback(UserGetCallbackFunc func) : callback(func), cond(&mutex) {}
+};
+
 class Client
 {
 public:
@@ -25,17 +33,19 @@ public:
   void init();
 
   void Put(const std::string& key, const std::string& value);
-  void Get(const std::string& key, std::string* value);
+  void Get(const std::string& key, std::string* value, StatusCode* status, UserGetCallback* callback);
   void Delete(const std::string& key, StatusCode* status);
 
   void GetStat(int* count, int* failed, int* pending, int* thread_pool_pendin, std::string* str);
   void ResetStat();
 
+
 private:
   void PutCallback(sofa::pbrpc::RpcController* cntl, PutRequest* request,
                    PutResponse* response);
   void GetCallback(sofa::pbrpc::RpcController* cntl, GetRequest* request,
-                   GetResponse* response);
+                   GetResponse* response, std::string* value, StatusCode* status,
+                   UserGetCallback* callback);
   void DeleteCallback(sofa::pbrpc::RpcController* cntl, DeleteRequest* request,
                       DeleteResponse* response);
 

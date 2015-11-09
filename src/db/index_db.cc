@@ -15,8 +15,17 @@ IndexDB::IndexDB() {}
 void IndexDB::Put(const std::string& key, EntryMeta* meta) {
   MutexLock lock(&mutex_);
   index_[key] = meta;
-  std::cerr << "index:" << key << ":" << meta->filename << "-"
-            << meta->offset << "-" << meta->length << std::endl;
+}
+
+StatusCode IndexDB::Get(const std::string& key, EntryMeta** meta) {
+  MutexLock lock(&mutex_);
+  std::map<std::string, EntryMeta*>::iterator it = index_.find(key);
+  if (it == index_.end()) {
+    return kKeyNotFound;
+  }
+  *meta = index_[key];
+  std::cerr << (*meta)->ToString() << std::endl;
+  return kOK;
 }
 
 } // namespace db

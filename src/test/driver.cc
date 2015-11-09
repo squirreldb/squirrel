@@ -8,7 +8,7 @@
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include "src/client/client.h"
+#include "src/sdk/client.h"
 
 void test_put(baidu::squirrel::sdk::Client* client) {
   uint64_t key_int = 0;

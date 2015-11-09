@@ -9,7 +9,7 @@
 
 #include <boost/bind.hpp>
 
-#include "src/client/client.h"
+#include "src/sdk/client.h"
 
 extern std::string CONF_server_addr;
 extern std::string CONF_server_port;
@@ -54,19 +54,27 @@ void Client::PutCallback(sofa::pbrpc::RpcController* cntl, PutRequest* request,
 }
 
 void Client::GetCallback(sofa::pbrpc::RpcController* cntl, GetRequest* request,
-                         GetResponse* response) {
+                         GetResponse* response, std::string* value, StatusCode* status,
+                         UserGetCallback* callback) {
   if (cntl->Failed()) {
     SLOG(ERROR, "rpc failed: %s", cntl->ErrorText().c_str());
   }
   if (response->status() == kOK) {
     SLOG(INFO, "value: %s", response->value().c_str());
+    *value = response->value();
   } else {
+    SLOG(ERROR, "not found: %s", request->key().c_str());
     count_.Inc();
   }
+  *status = response->status();
 
   delete cntl;
   delete request;
   delete response;
+  if (callback) {
+    callback->callback(value, status);
+    (callback->cond).Signal();
+  }
 }
 
 void Client::DeleteCallback(sofa::pbrpc::RpcController* cntl, DeleteRequest* request,
@@ -94,7 +102,8 @@ void Client::Put(const std::string& key, const std::string& value) {
   thread_pool_->AddTask(task);
 }
 
-void Client::Get(const std::string& key, std::string* value) {
+void Client::Get(const std::string& key, std::string* value, StatusCode* status,
+                 UserGetCallback* callback) {
   GetRequest* request = new GetRequest();
   request->set_key(key);
 
@@ -102,9 +111,14 @@ void Client::Get(const std::string& key, std::string* value) {
   sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
   cntl->SetTimeout(3000);
   google::protobuf::Closure* done =
-    sofa::pbrpc::NewClosure(this, &Client::GetCallback, cntl, request, response);
+    sofa::pbrpc::NewClosure(this, &Client::GetCallback, cntl, request, response, value, status, callback);
 
-  stub_->Get(cntl, request, response, done);
+  ThreadPool::Task task =
+    boost::bind(&Server_Stub::Get, stub_, cntl, request, response, done);
+  thread_pool_->AddTask(task);
+  if (callback) {
+    (callback->cond).Wait();
+  }
 }
 
 void Client::Delete(const std::string& key, StatusCode* status) {
