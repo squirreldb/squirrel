@@ -22,11 +22,15 @@ public:
   StatusCode Delete(const std::string& key);
 
 private:
+  StatusCode SwitchFile();
+
+private:
   Mutex mutex_;
   uint64_t file_num_;
   std::string filename_;
   int fout_;
   uint32_t offset_;
+  const uint32_t file_size_limit_;
 
   IndexDB* index_;
 };

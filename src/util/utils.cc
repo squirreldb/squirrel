@@ -30,5 +30,12 @@ void DecodeDataEntry(const std::string& entry, std::string* key, std::string* va
   }
 }
 
+void GetDataFilename(uint64_t* file_num, std::string* filename) {
+  *file_num += 1;
+  filename->clear();
+  filename->assign(boost::lexical_cast<std::string>(*file_num));
+  filename->append(".data");
+}
+
 } // namespace squirrel
 } // namespace baidu

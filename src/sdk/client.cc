@@ -13,15 +13,15 @@
 
 extern std::string CONF_server_addr;
 extern std::string CONF_server_port;
-extern int CONF_thread_num;
-extern int CONF_put_pending;
+extern int CONF_sdk_thread_num;
+extern int CONF_sdk_put_pending;
 
 namespace baidu {
 namespace squirrel {
 namespace sdk {
 
 Client::Client() :
-    thread_num_(CONF_thread_num), thread_pool_(new ThreadPool(thread_num_)) {
+    thread_num_(CONF_sdk_thread_num), thread_pool_(new ThreadPool(thread_num_)) {
   init();
 }
 
@@ -118,8 +118,8 @@ void Client::DeleteCallback(sofa::pbrpc::RpcController* cntl, DeleteRequest* req
 
 void Client::Put(const std::string& key, const std::string& value, StatusCode* status,
                  UserPutCallback* callback) {
-  while (pending_.Get() > CONF_put_pending) {
-    usleep(1000);
+  while (pending_.Get() > CONF_sdk_put_pending) {
+    usleep(100);
   }
   PutRequest* request = new PutRequest();
   request->set_key(key);

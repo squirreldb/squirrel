@@ -17,9 +17,9 @@ void ServerImpl::Put(google::protobuf::RpcController* controller,
                      const PutRequest* request,
                      PutResponse* response,
                      google::protobuf::Closure* done) {
-  if (count_.Get() % 1000000 == 0) { // not for counting, but for heartbeat detect
-    SLOG(INFO, "receive put request: %s %s", request->key().c_str(),
-         request->value().c_str());
+  if (count_.Get() % 1000000 == 0) {
+    //SLOG(INFO, "receive put request: %s %s", request->key().c_str(),
+         //request->value().c_str());
   }
   count_.Inc();
   std::string key = request->key();

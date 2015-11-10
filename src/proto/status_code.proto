@@ -7,4 +7,6 @@ package baidu.squirrel;
 enum StatusCode {
   kOK = 1;
   kKeyNotFound = 2;
+
+  kIOError = 100;
 }
