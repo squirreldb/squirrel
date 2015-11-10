@@ -12,9 +12,11 @@ namespace db {
 
 IndexDB::IndexDB() {}
 
-void IndexDB::Put(const std::string& key, EntryMeta* meta) {
+StatusCode IndexDB::Put(const std::string& key, EntryMeta* meta) {
   MutexLock lock(&mutex_);
+  std::cerr << "put: " << meta->ToString() << std::endl;
   index_[key] = meta;
+  return kOK;
 }
 
 StatusCode IndexDB::Get(const std::string& key, EntryMeta** meta) {
@@ -23,8 +25,21 @@ StatusCode IndexDB::Get(const std::string& key, EntryMeta** meta) {
   if (it == index_.end()) {
     return kKeyNotFound;
   }
-  *meta = index_[key];
-  std::cerr << (*meta)->ToString() << std::endl;
+  *meta = it->second;
+  std::cerr << "get: " << (*meta)->ToString() << std::endl;
+  return kOK;
+}
+
+StatusCode IndexDB::Delete(const std::string& key) {
+  MutexLock lock(&mutex_);
+  std::map<std::string, EntryMeta*>::iterator it = index_.find(key);
+  if (it == index_.end()) {
+    return kKeyNotFound;
+  }
+  EntryMeta* meta = it->second;
+  std::cerr << "delete: " << meta->ToString() << std::endl;
+  index_.erase(it);
+  delete meta;
   return kOK;
 }
 

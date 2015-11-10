@@ -80,8 +80,7 @@ fi
 
 # common
 if [ ! -f "${FLAG_DIR}/common" ] \
-    || [ ! -f "${DEPS_PREFIX}/lib/libcommon.a" ] \
-    || [ ! -d "${DEPS_PREFIX}/include/common" ]; then
+    || [ ! -f "${DEPS_PREFIX}/lib/libcommon.a" ]; then
     rm -rf common
     git clone https://github.com/baidu/common
     cd common

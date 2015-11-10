@@ -12,30 +12,92 @@
 #include "src/proto/status_code.pb.h"
 #include "src/sdk/client.h"
 
-void GetCallback(std::string* value, baidu::squirrel::StatusCode* status) {
-  if (*status == baidu::squirrel::kOK) {
-    std::cout << *value << std::endl;
+namespace baidu {
+namespace squirrel {
+
+void GetCallback(const std::string& key, std::string* value, StatusCode* status) {
+  if (*status == kOK) {
+    std::cout << key << "-" << *value << std::endl;
   } else {
     std::cout << StatusCode_Name(*status) << std::endl;
   }
 }
 
-int main(int argc, char* argv[]) {
+int32_t GetOp(int argc, char* argv[]) {
   if (argc < 3) {
     std::cerr << "missing arguments" << std::endl;
     return 1;
   }
-  std::string op = argv[1];
   std::string key = argv[2];
+  sdk::Client client;
+  StatusCode status;
   std::string value;
-  baidu::squirrel::sdk::Client client;
-  baidu::squirrel::StatusCode status;
+
+  // async
+  // sdk::UserGetCallback get_callback(boost::bind(&GetCallback, _1, _2, _3));
+  // client.Get(key, &value, &status, &get_callback);
+
+  client.Get(key, &value, &status, NULL);
+  if (status == kOK) {
+    std::cout << value << std::endl;
+  } else {
+    std::cout << StatusCode_Name(status) << std::endl;
+  }
+  return 0;
+}
+
+int32_t PutOp(int argc, char* argv[]) {
+  if (argc < 4) {
+    std::cerr << "missing arguments" << std::endl;
+    return 1;
+  }
+  std::string key = argv[2];
+  std::string value = argv[3];
+  sdk::Client client;
+  StatusCode status;
+
+  client.Put(key, value, &status, NULL);
+  if (status == kOK) {
+    std::cout << "Put " << key << "-" << value << std::endl;
+  } else {
+    std::cout << StatusCode_Name(status) << std::endl;
+  }
+  return 0;
+}
+
+int32_t DeleteOp(int argc, char* argv[]) {
+  if (argc < 3) {
+    std::cerr << "missing arguments" << std::endl;
+    return 1;
+  }
+  std::string key = argv[2];
+  sdk::Client client;
+  StatusCode status;
+
+  client.Delete(key, &status, NULL);
+  if (status == kOK) {
+    std::cout << "Delete " << key << std::endl;
+  } else {
+    std::cout << StatusCode_Name(status) << std::endl;
+  }
+  return 0;
+}
+
+} // namespace sdk
+} // namespace squirrel
+
+int main(int argc, char* argv[]) {
+  if (argc < 2) {
+    std::cerr << "missing arguments" << std::endl;
+    return 1;
+  }
+  std::string op = argv[1];
   if (op == "put") {
-    value = argv[3];
-    client.Put(key, value);
+    return baidu::squirrel::PutOp(argc, argv);
   } else if (op == "get") {
-    baidu::squirrel::sdk::UserGetCallback get_callback(boost::bind(&GetCallback, &value, &status));
-    client.Get(key, &value, &status, &get_callback);
+    return baidu::squirrel::GetOp(argc, argv);
+  } else if (op == "del") {
+    return baidu::squirrel::DeleteOp(argc, argv);
   }
   return 0;
 }

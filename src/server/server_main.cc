@@ -18,7 +18,7 @@ int main() {
     return EXIT_FAILURE;
   }
 
-  baidu::squirrel::sdk::Server* server_service = new baidu::squirrel::server::ServerImpl();
+  baidu::squirrel::server::Server* server_service = new baidu::squirrel::server::ServerImpl();
   if (!rpc_server.RegisterService(server_service)) {
     SLOG(ERROR, "register service failed");
     return EXIT_FAILURE;

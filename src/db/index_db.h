@@ -33,8 +33,9 @@ struct EntryMeta
 class IndexDB {
 public:
   IndexDB();
-  void Put(const std::string& key, EntryMeta* meta);
+  StatusCode Put(const std::string& key, EntryMeta* meta);
   StatusCode Get(const std::string& key, EntryMeta** meta);
+  StatusCode Delete(const std::string& key);
 
 private:
   Mutex mutex_;

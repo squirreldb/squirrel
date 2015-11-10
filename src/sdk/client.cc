@@ -39,7 +39,8 @@ void Client::init() {
 }
 
 void Client::PutCallback(sofa::pbrpc::RpcController* cntl, PutRequest* request,
-                         PutResponse* response) {
+                         PutResponse* response, StatusCode* status,
+                         UserPutCallback* callback, CondVar* cond) {
   if (cntl->Failed()) {
     // SLOG(ERROR, "rpc failed: %s", cntl->ErrorText().c_str());
     failed_.Inc();
@@ -47,6 +48,14 @@ void Client::PutCallback(sofa::pbrpc::RpcController* cntl, PutRequest* request,
     count_.Inc();
   }
   pending_.Dec();
+  *status = response->status();
+
+  if (callback) {
+    (*callback)(request->key(), request->value(), status);
+    delete callback;
+  } else {
+    cond->Signal();
+  }
 
   delete cntl;
   delete request;
@@ -55,7 +64,7 @@ void Client::PutCallback(sofa::pbrpc::RpcController* cntl, PutRequest* request,
 
 void Client::GetCallback(sofa::pbrpc::RpcController* cntl, GetRequest* request,
                          GetResponse* response, std::string* value, StatusCode* status,
-                         UserGetCallback* callback) {
+                         UserGetCallback* callback, CondVar* cond) {
   if (cntl->Failed()) {
     SLOG(ERROR, "rpc failed: %s", cntl->ErrorText().c_str());
   }
@@ -68,21 +77,47 @@ void Client::GetCallback(sofa::pbrpc::RpcController* cntl, GetRequest* request,
   }
   *status = response->status();
 
+  if (callback) {
+    (*callback)(request->key(), value, status);
+    delete callback;
+  } else {
+    cond->Signal();
+  }
+
   delete cntl;
   delete request;
   delete response;
-  if (callback) {
-    callback->callback(value, status);
-    (callback->cond).Signal();
-  }
+
 }
 
 void Client::DeleteCallback(sofa::pbrpc::RpcController* cntl, DeleteRequest* request,
-                            DeleteResponse* response) {
-  // TODO
+                            DeleteResponse* response, StatusCode* status,
+                            UserDeleteCallback* callback, CondVar* cond) {
+  if (cntl->Failed()) {
+    SLOG(ERROR, "rpc failed: %s", cntl->ErrorText().c_str());
+  }
+  if (response->status() == kOK) {
+    SLOG(INFO, "key: %s", request->key().c_str());
+  } else {
+    SLOG(ERROR, "not found: %s", request->key().c_str());
+    count_.Inc();
+  }
+  *status = response->status();
+
+  if (callback) {
+    (*callback)(request->key(), status);
+    delete callback;
+  } else {
+    cond->Signal();
+  }
+
+  delete cntl;
+  delete request;
+  delete response;
 }
 
-void Client::Put(const std::string& key, const std::string& value) {
+void Client::Put(const std::string& key, const std::string& value, StatusCode* status,
+                 UserPutCallback* callback) {
   while (pending_.Get() > CONF_put_pending) {
     usleep(1000);
   }
@@ -93,13 +128,18 @@ void Client::Put(const std::string& key, const std::string& value) {
   PutResponse* response = new PutResponse();
   sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
   cntl->SetTimeout(3000);
+
+  Mutex mutex;
+  CondVar cond(&mutex);
   google::protobuf::Closure* done =
-    sofa::pbrpc::NewClosure(this, &Client::PutCallback, cntl, request, response);
+    sofa::pbrpc::NewClosure(this, &Client::PutCallback, cntl, request, response,
+                            status, callback, &cond);
 
   pending_.Inc();
-  ThreadPool::Task task =
-    boost::bind(&Server_Stub::Put, stub_, cntl, request, response, done);
-  thread_pool_->AddTask(task);
+  stub_->Put(cntl, request, response, done);
+  if (!callback) {
+    cond.Wait();
+  }
 }
 
 void Client::Get(const std::string& key, std::string* value, StatusCode* status,
@@ -110,19 +150,37 @@ void Client::Get(const std::string& key, std::string* value, StatusCode* status,
   GetResponse* response = new GetResponse();
   sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
   cntl->SetTimeout(3000);
-  google::protobuf::Closure* done =
-    sofa::pbrpc::NewClosure(this, &Client::GetCallback, cntl, request, response, value, status, callback);
 
-  ThreadPool::Task task =
-    boost::bind(&Server_Stub::Get, stub_, cntl, request, response, done);
-  thread_pool_->AddTask(task);
-  if (callback) {
-    (callback->cond).Wait();
+  Mutex mutex;
+  CondVar cond(&mutex);
+  google::protobuf::Closure* done =
+    sofa::pbrpc::NewClosure(this, &Client::GetCallback, cntl, request, response, value,
+                            status, callback, &cond);
+
+  stub_->Get(cntl, request, response, done);
+  if (!callback) {
+    cond.Wait();
   }
 }
 
-void Client::Delete(const std::string& key, StatusCode* status) {
-  // TODO
+void Client::Delete(const std::string& key, StatusCode* status, UserDeleteCallback* callback) {
+  DeleteRequest* request = new DeleteRequest();
+  request->set_key(key);
+
+  DeleteResponse* response = new DeleteResponse();
+  sofa::pbrpc::RpcController* cntl = new sofa::pbrpc::RpcController();
+  cntl->SetTimeout(3000);
+
+  Mutex mutex;
+  CondVar cond(&mutex);
+  google::protobuf::Closure* done =
+    sofa::pbrpc::NewClosure(this, &Client::DeleteCallback, cntl, request, response,
+                            status, callback, &cond);
+
+  stub_->Delete(cntl, request, response, done);
+  if (!callback) {
+    cond.Wait();
+  }
 }
 
 void Client::GetStat(int* count, int* failed, int* pending,

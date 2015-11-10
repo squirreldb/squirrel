@@ -19,16 +19,17 @@ DB::DB() : file_num_(0), offset_(0), index_(new IndexDB()) {
   filename_ = boost::lexical_cast<std::string>(file_num_);
   filename_ += ".data";
   std::cerr << "write to file " << filename_ << std::endl;
-  fout_ = new std::ofstream(filename_.c_str(), std::ofstream::out);
+  fout_ = open(filename_.c_str(), O_WRONLY | O_CREAT);
 }
 
-void DB::Put(const std::string& key, const std::string& value, StatusCode* status) {
+StatusCode DB::Put(const std::string& key, const std::string& value) {
   uint32_t key_len = key.length();
   uint32_t value_len = value.length();
   EntryMeta* meta = new EntryMeta();
 
   MutexLock lock(&mutex_);
-  (*fout_) << EncodeDataEntry(key, key_len, value, value_len);
+  std::string entry = EncodeDataEntry(key, key_len, value, value_len);
+  write(fout_, entry.c_str(), entry.size());
   meta->offset = offset_;
   meta->length = 8 + key_len + value_len;
   meta->filename = filename_;
@@ -36,7 +37,7 @@ void DB::Put(const std::string& key, const std::string& value, StatusCode* statu
   std::cerr << meta->ToString() << std::endl;
   mutex_.Unlock();
 
-  index_->Put(key, meta);
+  return index_->Put(key, meta);
 }
 
 StatusCode DB::Get(const std::string& key, std::string* value) {
@@ -55,6 +56,11 @@ StatusCode DB::Get(const std::string& key, std::string* value) {
   DecodeDataEntry(entry, NULL, value);
   std::cerr << "value:" << *value << std::endl;
   return kOK;
+}
+
+StatusCode DB::Delete(const std::string& key) {
+  StatusCode index_status = index_->Delete(key);
+  return index_status;
 }
 
 } // namespace db

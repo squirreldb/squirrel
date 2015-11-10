@@ -5,12 +5,7 @@
 #ifndef SQUIRREL_DB_H_
 #define SQUIRREL_DB_H_
 
-#include <iostream>
 #include <fstream>
-#include <string>
-#include <map>
-
-#include <mutex.h>
 
 #include "src/proto/status_code.pb.h"
 #include "index_db.h"
@@ -22,14 +17,15 @@ namespace db {
 class DB {
 public:
   DB();
-  void Put(const std::string& key, const std::string& value, StatusCode* status);
+  StatusCode Put(const std::string& key, const std::string& value);
   StatusCode Get(const std::string& key, std::string* value);
+  StatusCode Delete(const std::string& key);
 
 private:
   Mutex mutex_;
   uint64_t file_num_;
   std::string filename_;
-  std::ofstream* fout_;
+  int fout_;
   uint32_t offset_;
 
   IndexDB* index_;

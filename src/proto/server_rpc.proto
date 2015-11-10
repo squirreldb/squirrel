@@ -4,7 +4,7 @@
 
 import "src/proto/status_code.proto";
 
-package baidu.squirrel.sdk;
+package baidu.squirrel.server;
 option cc_generic_services = true;
 
 message PutRequest {

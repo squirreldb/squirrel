@@ -5,12 +5,8 @@
 #ifndef SERVER_SQUIRREL_SERVER_H
 #define SERVER_SQUIRREL_SERVER_H
 
-#include <string>
-#include <map>
-
 #include <sofa/pbrpc/pbrpc.h>
 #include <counter.h>
-#include <mutex.h>
 
 #include "src/db/db.h"
 #include "src/proto/server_rpc.pb.h"
@@ -19,20 +15,24 @@ namespace baidu {
 namespace squirrel {
 namespace server {
 
-class ServerImpl : public sdk::Server {
+class ServerImpl : public Server {
 public:
   ServerImpl();
   virtual ~ServerImpl() {}
 
 private:
   virtual void Put(google::protobuf::RpcController* controller,
-                   const sdk::PutRequest* request,
-                   sdk::PutResponse* response,
+                   const PutRequest* request,
+                   PutResponse* response,
                    google::protobuf::Closure* done);
   virtual void Get(google::protobuf::RpcController* controller,
-                   const sdk::GetRequest* request,
-                   sdk::GetResponse* response,
+                   const GetRequest* request,
+                   GetResponse* response,
                    google::protobuf::Closure* done);
+  virtual void Delete(google::protobuf::RpcController* controller,
+                      const DeleteRequest* request,
+                      DeleteResponse* response,
+                      google::protobuf::Closure* done);
 
 private:
   Mutex mutex_;

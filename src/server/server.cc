@@ -14,31 +14,41 @@ namespace server {
 ServerImpl::ServerImpl() : db_(new db::DB()) { }
 
 void ServerImpl::Put(google::protobuf::RpcController* controller,
-                     const sdk::PutRequest* request,
-                     sdk::PutResponse* response,
+                     const PutRequest* request,
+                     PutResponse* response,
                      google::protobuf::Closure* done) {
   if (count_.Get() % 1000000 == 0) { // not for counting, but for heartbeat detect
-    SLOG(INFO, "receive put request: %s", request->key().c_str());
+    SLOG(INFO, "receive put request: %s %s", request->key().c_str(),
+         request->value().c_str());
   }
   count_.Inc();
-  StatusCode status = kOK;
   std::string key = request->key();
   std::string value = request->value();
 
-  db_->Put(key, value, &status);
+  StatusCode status = db_->Put(key, value);
 
   response->set_status(status);
   done->Run();
   }
 
 void ServerImpl::Get(google::protobuf::RpcController* controller,
-                     const sdk::GetRequest* request,
-                     sdk::GetResponse* response,
+                     const GetRequest* request,
+                     GetResponse* response,
                      google::protobuf::Closure* done) {
   SLOG(INFO, "receive get request: %s", request->key().c_str());
   std::string value;
   StatusCode status = db_->Get(request->key(), &value);
   response->set_value(value);
+  response->set_status(status);
+  done->Run();
+}
+
+void ServerImpl::Delete(google::protobuf::RpcController* controller,
+                        const DeleteRequest* request,
+                        DeleteResponse* response,
+                        google::protobuf::Closure* done) {
+  SLOG(INFO, "receive get request: %s", request->key().c_str());
+  StatusCode status = db_->Delete(request->key());
   response->set_status(status);
   done->Run();
 }

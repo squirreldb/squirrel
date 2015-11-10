@@ -17,13 +17,17 @@ namespace baidu {
 namespace squirrel {
 namespace sdk {
 
-typedef boost::function<void (std::string*, StatusCode*)> UserGetCallbackFunc;
-struct UserGetCallback {
-  UserGetCallbackFunc callback;
-  Mutex mutex;
-  CondVar cond;
-  UserGetCallback(UserGetCallbackFunc func) : callback(func), cond(&mutex) {}
-};
+typedef boost::function<void (const std::string&, const std::string&, StatusCode*)> UserPutCallback;
+typedef boost::function<void (const std::string&, std::string*, StatusCode*)> UserGetCallback;
+typedef boost::function<void (const std::string&, StatusCode*)> UserDeleteCallback;
+
+typedef server::PutRequest PutRequest;
+typedef server::PutResponse PutResponse;
+typedef server::GetRequest GetRequest;
+typedef server::GetResponse GetResponse;
+typedef server::DeleteRequest DeleteRequest;
+typedef server::DeleteResponse DeleteResponse;
+typedef server::Server_Stub Server_Stub;
 
 class Client
 {
@@ -32,9 +36,11 @@ public:
   ~Client();
   void init();
 
-  void Put(const std::string& key, const std::string& value);
-  void Get(const std::string& key, std::string* value, StatusCode* status, UserGetCallback* callback);
-  void Delete(const std::string& key, StatusCode* status);
+  void Put(const std::string& key, const std::string& value, StatusCode* status,
+           UserPutCallback* callback);
+  void Get(const std::string& key, std::string* value, StatusCode* status,
+           UserGetCallback* callback);
+  void Delete(const std::string& key, StatusCode* status, UserDeleteCallback* callback);
 
   void GetStat(int* count, int* failed, int* pending, int* thread_pool_pendin, std::string* str);
   void ResetStat();
@@ -42,12 +48,14 @@ public:
 
 private:
   void PutCallback(sofa::pbrpc::RpcController* cntl, PutRequest* request,
-                   PutResponse* response);
+                   PutResponse* response, StatusCode* status,
+                   UserPutCallback* callback, CondVar* cond);
   void GetCallback(sofa::pbrpc::RpcController* cntl, GetRequest* request,
                    GetResponse* response, std::string* value, StatusCode* status,
-                   UserGetCallback* callback);
+                   UserGetCallback* callback, CondVar* cond);
   void DeleteCallback(sofa::pbrpc::RpcController* cntl, DeleteRequest* request,
-                      DeleteResponse* response);
+                      DeleteResponse* response, StatusCode* status,
+                      UserDeleteCallback* callback, CondVar* cond);
 
 private:
   int thread_num_;
