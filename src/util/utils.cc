@@ -10,23 +10,37 @@
 namespace baidu {
 namespace squirrel {
 
-std::string EncodeDataEntry(const std::string& key, uint32_t key_len,
-                            const std::string& value, uint32_t value_len) {
-  char size[8];
-  sprintf(size, "%04d", key_len);
-  sprintf(size + 4, "%04d", value_len);
-  std::string res(size, 8);
-  return res + key + value;
+void EncodeFixed32(char* buf, uint64_t value) {
+  buf[0] = value & 0xff;
+  buf[1] = (value >> 8) & 0xff;
+  buf[2] = (value >> 16) & 0xff;
+  buf[3] = (value >> 24) & 0xff;
 }
 
-void DecodeDataEntry(const std::string& entry, std::string* key, std::string* value) {
-  uint32_t key_len = boost::lexical_cast<uint32_t>(entry.substr(0, 4));
-  uint32_t value_len = boost::lexical_cast<uint32_t>(entry.substr(4, 4));
+void EncodeDataEntry(const std::string& key, uint32_t key_len,
+                     const std::string& value, uint32_t value_len, char* dst) {
+  char* p = dst;
+  EncodeFixed32(p, key_len);
+  p +=4;
+  EncodeFixed32(p, value_len);
+  p +=4;
+  memcpy(p, key.c_str(), key_len);
+  p += key_len;
+  memcpy(p, value.c_str(), value_len);
+  assert(static_cast<size_t>((p + value_len) - dst) == 8 + key_len + value_len);
+}
+
+
+void DecodeDataEntry(const char* entry, std::string* key, std::string* value) {
+  uint32_t key_len;
+  memcpy(&key_len, entry, sizeof(key_len));
+  uint32_t value_len;
+  memcpy(&value_len, entry + 4, sizeof(value_len));
   if (key) {
-    *key = entry.substr(8, key_len);
+    key->assign(entry + 8, key_len);
   }
   if (value) {
-    *value = entry.substr(8 + key_len, value_len);
+    value->assign(entry + 8 + key_len, value_len);
   }
 }
 

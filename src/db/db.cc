@@ -31,8 +31,11 @@ StatusCode DB::Put(const std::string& key, const std::string& value) {
   EntryMeta* meta = new EntryMeta();
 
   MutexLock lock(&mutex_);
-  std::string entry = EncodeDataEntry(key, key_len, value, value_len);
-  write(fout_, entry.c_str(), entry.size());
+  uint32_t data_size = 8 + key_len + value_len;
+  char buf[data_size];
+  EncodeDataEntry(key, key_len, value, value_len, buf);
+  write(fout_, buf, data_size);
+
   meta->offset = offset_;
   meta->length = 8 + key_len + value_len;
   meta->filename = filename_;
@@ -58,10 +61,8 @@ StatusCode DB::Get(const std::string& key, std::string* value) {
   }
 
   lseek(fp, meta->offset, SEEK_SET);
-  char data[meta->length];
-  read(fp, data, meta->length);
-  std::cerr << "read:" << data << std::endl;
-  std::string entry(data, meta->length);
+  char entry[meta->length];
+  read(fp, entry, meta->length);
   DecodeDataEntry(entry, NULL, value);
   std::cerr << "value:" << *value << std::endl;
   return kOK;
