@@ -183,6 +183,10 @@ void Client::Delete(const std::string& key, StatusCode* status, UserDeleteCallba
   }
 }
 
+void Client::Scan(const std::string& key, const std::string& value, StatusCode* status) {
+  // TODO
+}
+
 void Client::GetStat(int* count, int* failed, int* pending,
                              int* thread_pool_pending, std::string* str) {
   if (count) {

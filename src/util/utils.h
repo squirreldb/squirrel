@@ -13,6 +13,7 @@ void EncodeDataEntry(const std::string& key, uint32_t key_len,
                      const std::string& value, uint32_t value_len, char* dst);
 void DecodeDataEntry(const char* entry, std::string* key, std::string* value);
 void GetDataFilename(uint64_t* file_num, std::string* filename);
+
 } // namespace squirrel
 } // namespace baidu
 

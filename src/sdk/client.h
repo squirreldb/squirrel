@@ -42,6 +42,8 @@ public:
            UserGetCallback* callback);
   void Delete(const std::string& key, StatusCode* status, UserDeleteCallback* callback);
 
+  void Scan(const std::string& key, const std::string& value, StatusCode* status);
+
   void GetStat(int* count, int* failed, int* pending, int* thread_pool_pendin, std::string* str);
   void ResetStat();
 

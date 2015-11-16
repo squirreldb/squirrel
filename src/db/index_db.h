@@ -10,6 +10,7 @@
 
 #include <mutex.h>
 #include <boost/lexical_cast.hpp>
+#include <leveldb/db.h>
 
 #include "src/proto/status_code.pb.h"
 
@@ -20,8 +21,8 @@ namespace db {
 struct EntryMeta
 {
   std::string filename;
-  int32_t offset;
-  int32_t length;
+  uint32_t offset;
+  uint32_t length;
 
   std::string ToString() {
     return "filename=" + filename +
@@ -32,14 +33,13 @@ struct EntryMeta
 
 class IndexDB {
 public:
-  IndexDB();
+  IndexDB(const std::string& dbname);
   StatusCode Put(const std::string& key, EntryMeta* meta);
-  StatusCode Get(const std::string& key, EntryMeta** meta);
+  StatusCode Get(const std::string& key, EntryMeta* meta);
   StatusCode Delete(const std::string& key);
 
 private:
-  Mutex mutex_;
-  std::map<std::string, EntryMeta*> index_;
+  leveldb::DB* index_;
 };
 
 } // namespace db

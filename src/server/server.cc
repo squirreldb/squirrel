@@ -53,6 +53,20 @@ void ServerImpl::Delete(google::protobuf::RpcController* controller,
   done->Run();
 }
 
+void ServerImpl::Scan(google::protobuf::RpcController* controller,
+                      const ScanRequest* request,
+                      ScanResponse* response,
+                      google::protobuf::Closure* done) {
+  SLOG(INFO, "receive scan request: %s - %s", request->start_key().c_str(),
+       request->end_key().c_str());
+  bool complete;
+  StatusCode status = db_->Scan(request->start_key(), request->end_key(),
+                                response->mutable_results(), &complete);
+  response->set_complete(complete);
+  response->set_status(status);
+  done->Run();
+}
+
 } // namespace server
 } // namespace squirrel
 } // namespace baidu

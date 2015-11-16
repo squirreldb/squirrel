@@ -10,7 +10,7 @@
 namespace baidu {
 namespace squirrel {
 
-void EncodeFixed32(char* buf, uint64_t value) {
+void EncodeFixed32(char* buf, uint32_t value) {
   buf[0] = value & 0xff;
   buf[1] = (value >> 8) & 0xff;
   buf[2] = (value >> 16) & 0xff;

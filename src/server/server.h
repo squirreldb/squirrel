@@ -33,6 +33,10 @@ private:
                       const DeleteRequest* request,
                       DeleteResponse* response,
                       google::protobuf::Closure* done);
+  virtual void Scan(google::protobuf::RpcController* controller,
+                    const ScanRequest* request,
+                    ScanResponse* response,
+                    google::protobuf::Closure* done);
 
 private:
   Mutex mutex_;

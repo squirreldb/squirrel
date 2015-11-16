@@ -8,11 +8,15 @@
 #include <fstream>
 
 #include "src/proto/status_code.pb.h"
+#include "src/proto/server_rpc.pb.h"
 #include "index_db.h"
+
 
 namespace baidu {
 namespace squirrel {
 namespace db {
+
+typedef ::google::protobuf::RepeatedPtrField<baidu::squirrel::server::KvPair> KvPair;
 
 class DB {
 public:
@@ -20,6 +24,8 @@ public:
   StatusCode Put(const std::string& key, const std::string& value);
   StatusCode Get(const std::string& key, std::string* value);
   StatusCode Delete(const std::string& key);
+  StatusCode Scan(const std::string& start, const std::string& end, KvPair* results,
+                  bool* complete);
 
 private:
   StatusCode SwitchFile();

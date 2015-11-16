@@ -18,7 +18,7 @@ namespace squirrel {
 namespace db {
 
 DB::DB() : file_num_(0), offset_(0), file_size_limit_(CONF_db_file_size << 20),
-           index_(new IndexDB()) {
+           index_(new IndexDB("index_db")) {
   GetDataFilename(&file_num_, &filename_);
   std::cerr << "write to file " << filename_ << std::endl;
   fout_ = open(filename_.c_str(), O_WRONLY | O_CREAT,
@@ -28,7 +28,7 @@ DB::DB() : file_num_(0), offset_(0), file_size_limit_(CONF_db_file_size << 20),
 StatusCode DB::Put(const std::string& key, const std::string& value) {
   uint32_t key_len = key.length();
   uint32_t value_len = value.length();
-  EntryMeta* meta = new EntryMeta();
+  EntryMeta meta;
 
   MutexLock lock(&mutex_);
   uint32_t data_size = 8 + key_len + value_len;
@@ -36,33 +36,33 @@ StatusCode DB::Put(const std::string& key, const std::string& value) {
   EncodeDataEntry(key, key_len, value, value_len, buf);
   write(fout_, buf, data_size);
 
-  meta->offset = offset_;
-  meta->length = 8 + key_len + value_len;
-  meta->filename = filename_;
-  offset_ += meta->length;
-  std::cerr << meta->ToString() << std::endl;
+  meta.offset = offset_;
+  meta.length = 8 + key_len + value_len;
+  meta.filename = filename_;
+  offset_ += meta.length;
+  //std::cerr << meta.ToString() << std::endl;
   mutex_.Unlock();
 
   SwitchFile();
 
-  return index_->Put(key, meta);
+  return index_->Put(key, &meta);
 }
 
 StatusCode DB::Get(const std::string& key, std::string* value) {
-  EntryMeta* meta;
+  EntryMeta meta;
   StatusCode index_status = index_->Get(key, &meta);
   if (index_status != kOK) {
     return index_status;
   }
-  std::cerr << "Got index " << meta->ToString() << std::endl;
-  int fp = open(meta->filename.c_str(), O_RDONLY);
+  std::cerr << "Got index " << meta.ToString() << std::endl;
+  int fp = open(meta.filename.c_str(), O_RDONLY);
   if (fp < 0) {
     return kIOError;
   }
 
-  lseek(fp, meta->offset, SEEK_SET);
-  char entry[meta->length];
-  read(fp, entry, meta->length);
+  lseek(fp, meta.offset, SEEK_SET);
+  char entry[meta.length];
+  read(fp, entry, meta.length);
   DecodeDataEntry(entry, NULL, value);
   std::cerr << "value:" << *value << std::endl;
   return kOK;
@@ -71,6 +71,11 @@ StatusCode DB::Get(const std::string& key, std::string* value) {
 StatusCode DB::Delete(const std::string& key) {
   StatusCode index_status = index_->Delete(key);
   return index_status;
+}
+
+StatusCode DB::Scan(const std::string& start, const std::string& end, KvPair* results,
+                    bool* complete) {
+  // TODO
 }
 
 StatusCode DB::SwitchFile() {
@@ -87,6 +92,7 @@ StatusCode DB::SwitchFile() {
       return kIOError;
     }
     offset_ = 0;
+    std::cerr << "switch to new data file " << filename_ << std::endl;
   }
   return kOK;
 }

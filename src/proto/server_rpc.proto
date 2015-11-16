@@ -26,15 +26,34 @@ message GetResponse {
 }
 
 message DeleteRequest {
-    optional bytes key = 1;
+  optional bytes key = 1;
 }
 
 message DeleteResponse {
-    optional StatusCode status = 2;
+  optional StatusCode status = 2;
+}
+
+message ScanRequest {
+  optional bytes start_key = 1;
+  optional bytes end_key = 2;
+}
+
+message ScanResponse {
+  repeated KvPair results = 1;
+  optional StatusCode status = 2;
+  optional bool complete = 3;
+}
+
+// helper messages
+
+message KvPair {
+  optional bytes key = 1;
+  optional bytes value = 2;
 }
 
 service Server {
   rpc Put(PutRequest) returns(PutResponse);
   rpc Get(GetRequest) returns(GetResponse);
   rpc Delete(DeleteRequest) returns(DeleteResponse);
+  rpc Scan(ScanRequest) returns(ScanResponse);
 }
