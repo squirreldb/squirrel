@@ -9,4 +9,5 @@ enum StatusCode {
   kKeyNotFound = 2;
 
   kIOError = 100;
+  kCorrupted = 101;
 }

@@ -10,8 +10,10 @@
 namespace baidu {
 namespace squirrel {
 
-void EncodeDataEntry(const std::string& key, uint32_t key_len,
-                     const std::string& value, uint32_t value_len, char* dst) {
+void EncodeDataEntry(const std::string& key, const std::string& value,
+                     uint32_t encode_lengtch, char* dst) {
+  uint32_t key_len = key.length();
+  uint32_t value_len = value.length();
   char* p = dst;
   memcpy(p, &key_len, sizeof(key_len));
   p +=4;
@@ -20,7 +22,7 @@ void EncodeDataEntry(const std::string& key, uint32_t key_len,
   memcpy(p, key.c_str(), key_len);
   p += key_len;
   memcpy(p, value.c_str(), value_len);
-  assert(static_cast<size_t>((p + value_len) - dst) == 8 + key_len + value_len);
+  assert(static_cast<size_t>((p + value_len) - dst) == encode_lengtch);
 }
 
 void DecodeDataEntry(const char* entry, std::string* key, std::string* value) {

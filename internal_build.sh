@@ -91,7 +91,7 @@ if [ ! -f "${FLAG_DIR}/common" ] \
     touch "${FLAG_DIR}/common"
 fi
 
-# common
+# leveldb
 if [ ! -f "${FLAG_DIR}/leveldb" ] \
     || [ ! -f "${DEPS_PREFIX}/lib/libleveldb.a" ] \
     || [ ! -d "${DEPS_PREFIX}/include/leveldb" ] ; then

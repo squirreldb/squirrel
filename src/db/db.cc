@@ -35,7 +35,7 @@ StatusCode DB::Put(const std::string& key, const std::string& value) {
 
   uint32_t data_size = 8 + key_len + value_len;
   char buf[data_size];
-  EncodeDataEntry(key, key_len, value, value_len, buf);
+  EncodeDataEntry(key, value, data_size, buf);
   MutexLock lock(&mutex_);
   write(fout_, buf, data_size);
 
@@ -59,6 +59,8 @@ StatusCode DB::Get(const std::string& key, std::string* value) {
   StatusCode index_status = index_->Get(key, &index_value);
   if (index_status != kOK) {
     return index_status;
+  } else if (index_value.size() < 8) {
+    return kCorrupted;
   }
   uint32_t offset, length;
   std::string filename;
@@ -72,7 +74,12 @@ StatusCode DB::Get(const std::string& key, std::string* value) {
 
   lseek(fp, offset, SEEK_SET);
   char entry[length];
-  read(fp, entry, length);
+  int ret = read(fp, entry, length);
+  if (ret < 0) {
+    return kIOError;
+  } else if (ret != length) {
+    return kCorrupted;
+  }
   DecodeDataEntry(entry, NULL, value);
   std::cerr << "value:" << *value << std::endl;
   return kOK;
