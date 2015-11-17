@@ -7,14 +7,15 @@
 #include <leveldb/status.h>
 #include <leveldb/slice.h>
 
-#include "index_db.h"
+#include "index_leveldb.h"
 #include "src/util/utils.h"
 
 namespace baidu {
 namespace squirrel {
 namespace db {
 
-IndexDB::IndexDB(const std::string& dbname) {
+
+IndexLevelDB::IndexLevelDB(const std::string& dbname) {
   leveldb::Options options;
   options.create_if_missing = true;
   leveldb::Status status = leveldb::DB::Open(options, dbname, &index_);
@@ -25,7 +26,7 @@ IndexDB::IndexDB(const std::string& dbname) {
   }
 }
 
-StatusCode IndexDB::Put(const std::string& key, EntryMeta* meta) {
+StatusCode IndexLevelDB::Put(const std::string& key, EntryMeta* meta) {
   //std::cerr << "put: " << meta->ToString() << std::endl;
   char buf[8];
   EncodeFixed32(buf, meta->offset);
@@ -38,7 +39,7 @@ StatusCode IndexDB::Put(const std::string& key, EntryMeta* meta) {
   return kOK;
 }
 
-StatusCode IndexDB::Get(const std::string& key, EntryMeta* meta) {
+StatusCode IndexLevelDB::Get(const std::string& key, EntryMeta* meta) {
   std::string value;
   leveldb::ReadOptions options;
   leveldb::Status status = index_->Get(options, key, &value);
@@ -56,7 +57,7 @@ StatusCode IndexDB::Get(const std::string& key, EntryMeta* meta) {
   return kOK;
 }
 
-StatusCode IndexDB::Delete(const std::string& key) {
+StatusCode IndexLevelDB::Delete(const std::string& key) {
   //std::cerr << "delete: " << key << std::endl;
   leveldb::WriteOptions options;
   index_->Delete(options, key);

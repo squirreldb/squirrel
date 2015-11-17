@@ -5,12 +5,10 @@
 #ifndef SQUIRREL_INDEX_DB_H_
 #define SQUIRREL_INDEX_DB_H_
 
-#include <map>
 #include <string>
 
 #include <mutex.h>
 #include <boost/lexical_cast.hpp>
-#include <leveldb/db.h>
 
 #include "src/proto/status_code.pb.h"
 
@@ -33,13 +31,10 @@ struct EntryMeta
 
 class IndexDB {
 public:
-  IndexDB(const std::string& dbname);
-  StatusCode Put(const std::string& key, EntryMeta* meta);
-  StatusCode Get(const std::string& key, EntryMeta* meta);
-  StatusCode Delete(const std::string& key);
-
-private:
-  leveldb::DB* index_;
+  virtual ~IndexDB() {}
+  virtual StatusCode Put(const std::string& key, EntryMeta* meta) = 0;
+  virtual StatusCode Get(const std::string& key, EntryMeta* meta) = 0;
+  virtual StatusCode Delete(const std::string& key) = 0;
 };
 
 } // namespace db

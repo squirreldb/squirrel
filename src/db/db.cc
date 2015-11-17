@@ -9,6 +9,7 @@
 #include <fcntl.h>
 
 #include "db.h"
+#include "index_leveldb.h"
 #include "src/util/utils.h"
 
 extern int CONF_db_file_size;
@@ -18,7 +19,7 @@ namespace squirrel {
 namespace db {
 
 DB::DB() : file_num_(0), offset_(0), file_size_limit_(CONF_db_file_size << 20),
-           index_(new IndexDB("index_db")) {
+           index_(new IndexLevelDB("index_db")) {
   GetDataFilename(&file_num_, &filename_);
   std::cerr << "write to file " << filename_ << std::endl;
   fout_ = open(filename_.c_str(), O_WRONLY | O_CREAT,
@@ -73,9 +74,9 @@ StatusCode DB::Delete(const std::string& key) {
   return index_status;
 }
 
-StatusCode DB::Scan(const std::string& start, const std::string& end, KvPair* results,
+StatusCode DB::Scan(const std::string& start, const std::string& end, KvPairResults* results,
                     bool* complete) {
-  // TODO
+
 }
 
 StatusCode DB::SwitchFile() {

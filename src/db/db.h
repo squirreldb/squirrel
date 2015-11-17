@@ -16,7 +16,8 @@ namespace baidu {
 namespace squirrel {
 namespace db {
 
-typedef ::google::protobuf::RepeatedPtrField<baidu::squirrel::server::KvPair> KvPair;
+typedef ::google::protobuf::RepeatedPtrField<baidu::squirrel::server::KvPair> KvPairResults;
+typedef baidu::squirrel::server::KvPair KvPair;
 
 class DB {
 public:
@@ -24,7 +25,7 @@ public:
   StatusCode Put(const std::string& key, const std::string& value);
   StatusCode Get(const std::string& key, std::string* value);
   StatusCode Delete(const std::string& key);
-  StatusCode Scan(const std::string& start, const std::string& end, KvPair* results,
+  StatusCode Scan(const std::string& start, const std::string& end, KvPairResults* results,
                   bool* complete);
 
 private:
