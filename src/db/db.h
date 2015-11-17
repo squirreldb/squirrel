@@ -19,6 +19,19 @@ namespace db {
 typedef ::google::protobuf::RepeatedPtrField<baidu::squirrel::server::KvPair> KvPairResults;
 typedef baidu::squirrel::server::KvPair KvPair;
 
+struct EntryMeta
+{
+  std::string filename;
+  uint32_t offset;
+  uint32_t length;
+
+  std::string ToString() {
+    return "filename=" + filename +
+           " offset=" + boost::lexical_cast<std::string>(offset) +
+           " length=" + boost::lexical_cast<std::string>(length);
+    }
+};
+
 class DB {
 public:
   DB();
@@ -29,6 +42,8 @@ public:
                   bool* complete);
 
 private:
+  void Recover();
+  void LogFileNum();
   StatusCode SwitchFile();
 
 private:

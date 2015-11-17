@@ -20,10 +20,13 @@ namespace db {
 
 DB::DB() : file_num_(0), offset_(0), file_size_limit_(CONF_db_file_size << 20),
            index_(new IndexLevelDB("index_db")) {
+  Recover();
   GetDataFilename(&file_num_, &filename_);
   std::cerr << "write to file " << filename_ << std::endl;
   fout_ = open(filename_.c_str(), O_WRONLY | O_CREAT,
                S_IREAD | S_IWRITE | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+  LogFileNum();
+
 }
 
 StatusCode DB::Put(const std::string& key, const std::string& value) {
@@ -31,10 +34,10 @@ StatusCode DB::Put(const std::string& key, const std::string& value) {
   uint32_t value_len = value.length();
   EntryMeta meta;
 
-  MutexLock lock(&mutex_);
   uint32_t data_size = 8 + key_len + value_len;
   char buf[data_size];
   EncodeDataEntry(key, key_len, value, value_len, buf);
+  MutexLock lock(&mutex_);
   write(fout_, buf, data_size);
 
   meta.offset = offset_;
@@ -46,24 +49,37 @@ StatusCode DB::Put(const std::string& key, const std::string& value) {
 
   SwitchFile();
 
-  return index_->Put(key, &meta);
+  char index_buf[8];
+  EncodeFixed32(index_buf, meta.offset);
+  EncodeFixed32(index_buf + 4, meta.length);
+  std::string index_value = meta.filename;
+  index_value.append(index_buf, 8);
+  return index_->Put(key, index_value);
 }
 
 StatusCode DB::Get(const std::string& key, std::string* value) {
-  EntryMeta meta;
-  StatusCode index_status = index_->Get(key, &meta);
+  std::string index_value;
+  StatusCode index_status = index_->Get(key, &index_value);
+
+  uint32_t offset;
+  size_t value_size = index_value.size();
+  memcpy(&offset, &index_value[value_size - 8], sizeof(offset));
+  uint32_t length;
+  memcpy(&length, &index_value[value_size - 4], sizeof(length));
+  std::string filename(index_value, 0, value_size - 8);
+
   if (index_status != kOK) {
     return index_status;
   }
-  std::cerr << "Got index " << meta.ToString() << std::endl;
-  int fp = open(meta.filename.c_str(), O_RDONLY);
+  std::cerr << "Got index " << filename << ":" << offset << ":" << length << std::endl;
+  int fp = open(filename.c_str(), O_RDONLY);
   if (fp < 0) {
     return kIOError;
   }
 
-  lseek(fp, meta.offset, SEEK_SET);
-  char entry[meta.length];
-  read(fp, entry, meta.length);
+  lseek(fp, offset, SEEK_SET);
+  char entry[length];
+  read(fp, entry, length);
   DecodeDataEntry(entry, NULL, value);
   std::cerr << "value:" << *value << std::endl;
   return kOK;
@@ -77,6 +93,22 @@ StatusCode DB::Delete(const std::string& key) {
 StatusCode DB::Scan(const std::string& start, const std::string& end, KvPairResults* results,
                     bool* complete) {
 
+}
+
+void DB::Recover() {
+  std::string value;
+  StatusCode status = Get("LastFileNum", &value);
+  if (status != kKeyNotFound) {
+    uint32_t num;
+    memcpy(&num, &value, sizeof(num));
+    std::cerr << "LastFileNum " << num << std::endl;
+  }
+}
+
+void DB::LogFileNum() {
+  char buf[4];
+  EncodeFixed32(buf, file_num_);
+  //index_->Put("LastFileNum", std::string(buf, 4));
 }
 
 StatusCode DB::SwitchFile() {
@@ -94,6 +126,7 @@ StatusCode DB::SwitchFile() {
     }
     offset_ = 0;
     std::cerr << "switch to new data file " << filename_ << std::endl;
+    LogFileNum();
   }
   return kOK;
 }

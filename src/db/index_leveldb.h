@@ -17,8 +17,8 @@ class IndexLevelDB : public IndexDB {
 public:
   IndexLevelDB(const std::string& dbname);
   virtual ~IndexLevelDB() {};
-  virtual StatusCode Put(const std::string& key, EntryMeta* meta);
-  virtual StatusCode Get(const std::string& key, EntryMeta* meta);
+  virtual StatusCode Put(const std::string& key, const std::string& value);
+  virtual StatusCode Get(const std::string& key, std::string* value);
   virtual StatusCode Delete(const std::string& key);
 
 private:

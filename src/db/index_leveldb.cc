@@ -26,34 +26,19 @@ IndexLevelDB::IndexLevelDB(const std::string& dbname) {
   }
 }
 
-StatusCode IndexLevelDB::Put(const std::string& key, EntryMeta* meta) {
+StatusCode IndexLevelDB::Put(const std::string& key, const std::string& value) {
   //std::cerr << "put: " << meta->ToString() << std::endl;
-  char buf[8];
-  EncodeFixed32(buf, meta->offset);
-  EncodeFixed32(buf + 4, meta->length);
-  std::string value = meta->filename;
-  value.append(buf, 8);
-  leveldb::Slice value_slice(value);
   leveldb::WriteOptions options;
-  index_->Put(options, key, value_slice);
+  index_->Put(options, key, value);
   return kOK;
 }
 
-StatusCode IndexLevelDB::Get(const std::string& key, EntryMeta* meta) {
-  std::string value;
+StatusCode IndexLevelDB::Get(const std::string& key, std::string* value) {
   leveldb::ReadOptions options;
-  leveldb::Status status = index_->Get(options, key, &value);
+  leveldb::Status status = index_->Get(options, key, value);
   if (status.IsNotFound()) {
     return kKeyNotFound;
   }
-  uint32_t offset;
-  size_t value_size = value.size();
-  memcpy(&offset, &value[value_size - 8], sizeof(offset));
-  meta->offset = offset;
-  uint32_t length;
-  memcpy(&length, &value[value_size - 4], sizeof(length));
-  meta->length = length;
-  meta->filename.assign(value, 0, value_size - 8);
   return kOK;
 }
 

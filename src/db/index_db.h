@@ -16,24 +16,11 @@ namespace baidu {
 namespace squirrel {
 namespace db {
 
-struct EntryMeta
-{
-  std::string filename;
-  uint32_t offset;
-  uint32_t length;
-
-  std::string ToString() {
-    return "filename=" + filename +
-           " offset=" + boost::lexical_cast<std::string>(offset) +
-           " length=" + boost::lexical_cast<std::string>(length);
-    }
-};
-
 class IndexDB {
 public:
   virtual ~IndexDB() {}
-  virtual StatusCode Put(const std::string& key, EntryMeta* meta) = 0;
-  virtual StatusCode Get(const std::string& key, EntryMeta* meta) = 0;
+  virtual StatusCode Put(const std::string& key, const std::string& value) = 0;
+  virtual StatusCode Get(const std::string& key, std::string* value) = 0;
   virtual StatusCode Delete(const std::string& key) = 0;
 };
 
