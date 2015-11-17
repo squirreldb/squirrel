@@ -5,33 +5,41 @@
 #ifndef SQUIRREL_DB_H_
 #define SQUIRREL_DB_H_
 
-#include <iostream>
 #include <fstream>
-#include <string>
-#include <map>
 
-#include <mutex.h>
-
+#include "src/proto/status_code.pb.h"
+#include "src/proto/server_rpc.pb.h"
 #include "index_db.h"
+
 
 namespace baidu {
 namespace squirrel {
 namespace db {
 
+typedef ::google::protobuf::RepeatedPtrField<baidu::squirrel::server::KvPair> KvPairResults;
+typedef baidu::squirrel::server::KvPair KvPair;
+
 class DB {
 public:
   DB();
-  // status = 0: success
-  // status = 1: other
-  void Put(const std::string& key, const std::string& value, int* status);
-  void Get(const std::string& key, std::string* value, int* status);
+  StatusCode Put(const std::string& key, const std::string& value);
+  StatusCode Get(const std::string& key, std::string* value);
+  StatusCode Delete(const std::string& key);
+  StatusCode Scan(const std::string& start, const std::string& end, KvPairResults* results,
+                  bool* complete);
+
+private:
+  void Recover();
+  void LogFileNum();
+  StatusCode SwitchFile();
 
 private:
   Mutex mutex_;
-  uint64_t file_num_;
+  uint32_t file_num_;
   std::string filename_;
-  std::ofstream* fout_;
+  int fout_;
   uint32_t offset_;
+  const uint32_t file_size_limit_;
 
   IndexDB* index_;
 };

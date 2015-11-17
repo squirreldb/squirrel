@@ -14,35 +14,58 @@ namespace server {
 ServerImpl::ServerImpl() : db_(new db::DB()) { }
 
 void ServerImpl::Put(google::protobuf::RpcController* controller,
-                     const Squirrel::PutRequest* request,
-                     Squirrel::PutResponse* response,
+                     const PutRequest* request,
+                     PutResponse* response,
                      google::protobuf::Closure* done) {
-  if (count_.Get() % 1000000 == 0) { // not for counting, but for heartbeat detect
-    SLOG(INFO, "receive put request: %s", request->key().c_str());
+  if (count_.Get() % 1000000 == 0) {
+    //SLOG(INFO, "receive put request: %s %s", request->key().c_str(),
+         //request->value().c_str());
   }
   count_.Inc();
-  int status = 0;
   std::string key = request->key();
   std::string value = request->value();
 
-  db_->Put(key, value, &status);
+  StatusCode status = db_->Put(key, value);
 
   response->set_status(status);
   done->Run();
   }
 
 void ServerImpl::Get(google::protobuf::RpcController* controller,
-                     const Squirrel::GetRequest* request,
-                     Squirrel::GetResponse* response,
+                     const GetRequest* request,
+                     GetResponse* response,
                      google::protobuf::Closure* done) {
   SLOG(INFO, "receive get request: %s", request->key().c_str());
   std::string value;
-  int status = 0;
-  db_->Get(request->key(), &value, &status);
+  StatusCode status = db_->Get(request->key(), &value);
   response->set_value(value);
   response->set_status(status);
   done->Run();
-  }
+}
+
+void ServerImpl::Delete(google::protobuf::RpcController* controller,
+                        const DeleteRequest* request,
+                        DeleteResponse* response,
+                        google::protobuf::Closure* done) {
+  SLOG(INFO, "receive get request: %s", request->key().c_str());
+  StatusCode status = db_->Delete(request->key());
+  response->set_status(status);
+  done->Run();
+}
+
+void ServerImpl::Scan(google::protobuf::RpcController* controller,
+                      const ScanRequest* request,
+                      ScanResponse* response,
+                      google::protobuf::Closure* done) {
+  SLOG(INFO, "receive scan request: %s - %s", request->start_key().c_str(),
+       request->end_key().c_str());
+  bool complete;
+  StatusCode status = db_->Scan(request->start_key(), request->end_key(),
+                                response->mutable_results(), &complete);
+  response->set_complete(complete);
+  response->set_status(status);
+  done->Run();
+}
 
 } // namespace server
 } // namespace squirrel

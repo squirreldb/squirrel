@@ -8,11 +8,19 @@
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include "src/client/client.h"
+#include "src/sdk/client.h"
 
-void test_put(baidu::squirrel::sdk::Client* client) {
+namespace baidu {
+namespace squirrel {
+
+void test_put_callback(const std::string&, const std::string&, StatusCode*) {
+  // dummy function
+}
+
+void test_put(sdk::Client* client) {
   uint64_t key_int = 0;
   uint64_t value_int = 0;
+  StatusCode status;
   while (true) {
     int thread_pool_pending;
     client->GetStat(NULL, NULL, NULL, &thread_pool_pending, NULL);
@@ -22,11 +30,15 @@ void test_put(baidu::squirrel::sdk::Client* client) {
     }
     std::string key = boost::lexical_cast<std::string>(key_int);
     std::string value = boost::lexical_cast<std::string>(value_int);
-    client->Put(key, value);
+    sdk::UserPutCallback* put_callback = new sdk::UserPutCallback(boost::bind(&test_put_callback, _1, _2, _3));
+    client->Put(key, value, &status, put_callback);
     ++key_int;
     ++value_int;
   }
 }
+
+} // namespace sdk
+} // namespace squirrel
 
 int main() {
   struct timeval tv_start, tv_end;
@@ -35,7 +47,7 @@ int main() {
   baidu::squirrel::sdk::Client client;
 
   baidu::common::Thread thread;
-  thread.Start(boost::bind(&test_put, &client));
+  thread.Start(boost::bind(&baidu::squirrel::test_put, &client));
 
   while (true) {
     gettimeofday(&tv_end, NULL);

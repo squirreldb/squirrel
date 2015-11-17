@@ -80,8 +80,7 @@ fi
 
 # common
 if [ ! -f "${FLAG_DIR}/common" ] \
-    || [ ! -f "${DEPS_PREFIX}/lib/libcommon.a" ] \
-    || [ ! -d "${DEPS_PREFIX}/include/common" ]; then
+    || [ ! -f "${DEPS_PREFIX}/lib/libcommon.a" ]; then
     rm -rf common
     git clone https://github.com/baidu/common
     cd common
@@ -90,6 +89,20 @@ if [ ! -f "${FLAG_DIR}/common" ] \
     make install
     cd -
     touch "${FLAG_DIR}/common"
+fi
+
+# leveldb
+if [ ! -f "${FLAG_DIR}/leveldb" ] \
+    || [ ! -f "${DEPS_PREFIX}/lib/libleveldb.a" ] \
+    || [ ! -d "${DEPS_PREFIX}/include/leveldb" ] ; then
+    rm -rf leveldb
+    git clone https://github.com/lylei/leveldb
+    cd leveldb
+    sed -i 's/^PREFIX=.*/PREFIX=..\/..\/thirdparty/' config.mk
+    make -j4
+    make install
+    cd -
+    touch "${FLAG_DIR}/leveldb"
 fi
 
 cd ${WORK_DIR}
