@@ -10,26 +10,18 @@
 namespace baidu {
 namespace squirrel {
 
-void EncodeFixed32(char* buf, uint32_t value) {
-  buf[0] = value & 0xff;
-  buf[1] = (value >> 8) & 0xff;
-  buf[2] = (value >> 16) & 0xff;
-  buf[3] = (value >> 24) & 0xff;
-}
-
 void EncodeDataEntry(const std::string& key, uint32_t key_len,
                      const std::string& value, uint32_t value_len, char* dst) {
   char* p = dst;
-  EncodeFixed32(p, key_len);
+  memcpy(p, &key_len, sizeof(key_len));
   p +=4;
-  EncodeFixed32(p, value_len);
+  memcpy(p, &value_len, sizeof(value_len));
   p +=4;
   memcpy(p, key.c_str(), key_len);
   p += key_len;
   memcpy(p, value.c_str(), value_len);
   assert(static_cast<size_t>((p + value_len) - dst) == 8 + key_len + value_len);
 }
-
 
 void DecodeDataEntry(const char* entry, std::string* key, std::string* value) {
   uint32_t key_len;
@@ -44,7 +36,24 @@ void DecodeDataEntry(const char* entry, std::string* key, std::string* value) {
   }
 }
 
-void GetDataFilename(uint64_t* file_num, std::string* filename) {
+void EncodeIndexEntry(uint32_t offset, uint32_t length, const std::string& filename,
+                      std::string* res) {
+  char buf[8];
+  memcpy(buf, &offset, sizeof(offset));
+  memcpy(buf + 4, &length, sizeof(length));
+  *res = filename;
+  res->append(buf, 8);
+}
+
+void DecodeIndexEntry(const std::string& input, uint32_t* offset, uint32_t* length,
+                      std::string* filename) {
+  size_t input_size = input.size();
+  memcpy(offset, &input[input_size - 8], sizeof(uint32_t));
+  memcpy(length, &input[input_size - 4], sizeof(uint32_t));
+  filename->assign(input, 0, input_size - 8);
+}
+
+void GetDataFilename(uint32_t* file_num, std::string* filename) {
   *file_num += 1;
   filename->clear();
   filename->assign(boost::lexical_cast<std::string>(*file_num));

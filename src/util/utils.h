@@ -8,11 +8,14 @@
 namespace baidu {
 namespace squirrel {
 
-void EncodeFixed32(char* buf, uint32_t value);
 void EncodeDataEntry(const std::string& key, uint32_t key_len,
                      const std::string& value, uint32_t value_len, char* dst);
 void DecodeDataEntry(const char* entry, std::string* key, std::string* value);
-void GetDataFilename(uint64_t* file_num, std::string* filename);
+void EncodeIndexEntry(uint32_t offset, uint32_t length, const std::string& filename,
+                      std::string* res);
+void DecodeIndexEntry(const std::string& input, uint32_t* offset, uint32_t* length,
+                      std::string* filename);
+void GetDataFilename(uint32_t* file_num, std::string* filename);
 
 } // namespace squirrel
 } // namespace baidu
